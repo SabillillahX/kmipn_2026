@@ -1,0 +1,10 @@
+services:
+  db:
+    image: pgvector/pgvector:0.8.5-pg18-trixie
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: laporan_db
+    ports:
+      - "5555:5432"
