@@ -1,7 +1,19 @@
 services:
+  python-BE:
+    build:
+      context: ./ai-backend
+      dockerfile: Dockerfile
+    container_name: python-BE
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ai-backend:/app
+      - /app/venv
+    restart: unless-stopped
+
   db:
     image: pgvector/pgvector:0.8.5-pg18-trixie
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
