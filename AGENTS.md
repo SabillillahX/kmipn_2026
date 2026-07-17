@@ -4,6 +4,7 @@
     3. Write clean code and use human-readable variable names.
     4. It is STRICTLY PROHIBITED to include comments in the code (no //, no /* */).
     5. Do not include explanatory text before or after the code (no yapping). Just provide the code block.
+    6. The folder structure is strictly mandatory, you must follow it.
 
 ## PROJECT INFORMATION
     1. This python path is on folder ai-backend
@@ -19,3 +20,32 @@
 * All persistent data is managed through Drizzle ORM, which connects to a PostgreSQL database.
 * The architecture strictly requires the PostGIS extension within PostgreSQL to handle complex spatial queries, particularly for the Lock Flag Method.
 * The entire system architecture is portable and designed to be deployed using docker-compose.
+
+## Fullstack Folder Architecture
+/
+├── public/
+├── app/
+├── src/
+│    ├── components/          # Global component
+│    │
+│    ├── database/        
+│    │    ├── index.ts
+│    │    └── schema.ts       
+│    │
+│    ├── features/
+│    │    └── {any_features}/
+│    │          ├── actions/
+│    │          ├── components/
+│    │          ├── schemas/
+│    │          └── services/
+│    │
+│    ├── styles/          
+│    │    ├── {any_features}.module.css
+│    │    └── globals.css     
+│    │
+│    ├── hooks/
+│    ├── lib/
+│    ├── types/
+│    └── utils/
+│
+└── middleware.ts
