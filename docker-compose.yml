@@ -1,19 +1,19 @@
 services:
-  python-BE:
+  python:
     build:
       context: ./ai-backend
-      dockerfile: Dockerfile
-    container_name: python-BE
-    ports:
-      - "8000:8000"
+    restart: unless-stopped
     volumes:
       - ./ai-backend:/app
-      - /app/venv
-    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
 
   db:
     image: pgvector/pgvector:0.8.5-pg18-trixie
     restart: unless-stopped
+    container_name: drizzle_db
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
