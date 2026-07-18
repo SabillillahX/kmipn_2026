@@ -1,0 +1,325 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f9fafb;
+  color: var(--ink, #111827);
+  font-family: var(--font-body), 'Inter', sans-serif;
+}
+
+.sidebar {
+  width: 280px;
+  background-color: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+
+.brand {
+  font-size: 1.5rem;
+  font-weight: 750;
+  color: var(--ink, #111827);
+  margin-bottom: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  color: #64748b;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.navItem:hover {
+  background-color: #f1f5f9;
+  color: var(--ink, #111827);
+}
+.navItem.active {
+  background-color: var(--sky, #dbeafe);
+  color: var(--blue, #2563eb);
+  font-weight: 600;
+}
+
+.userProfile {
+  margin-top: auto;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--blue, #2563eb);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.userName {
+  font-weight: 650;
+  font-size: 0.9375rem;
+  color: var(--ink, #111827);
+}
+
+.userRole {
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.main {
+  flex: 1;
+  padding: 2.5rem 3rem;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.header {
+  margin-bottom: 2.5rem;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: var(--ink, #111827);
+  letter-spacing: -0.025em;
+}
+
+.subtitle {
+  color: #64748b;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.queueList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ticketCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  overflow: hidden;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.ticketCard:hover {
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  border-color: #cbd5e1;
+}
+
+.ticketContent {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.ticketHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.ticketTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ink, #111827);
+  margin: 0 0 0.5rem 0;
+}
+
+.ticketMeta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.ticketId {
+  background: #f1f5f9;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.lockAlert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--paper-2);
+  border: 1px dashed var(--blue);
+  color: var(--ink);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 1.25rem;
+}
+
+.lockAlert strong {
+  color: var(--blue);
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.detailLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.detailValue {
+  font-size: 0.9375rem;
+  color: var(--ink, #111827);
+  font-weight: 500;
+}
+.detailValue.coords {
+  font-family: monospace;
+  color: var(--blue, #2563eb);
+  background: var(--sky, #dbeafe);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.historyBox {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.historyTitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.historyItem {
+  font-size: 0.875rem;
+  color: #475569;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+}
+
+.ticketActions {
+  margin-top: auto;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btnPrimary {
+  background: var(--blue, #2563eb);
+  color: #ffffff;
+  border: none;
+  padding: 0.625rem 1.25rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
+}
+.btnPrimary:hover {
+  background: #1d4ed8;
+}
+
+.btnSecondary {
+  background: #ffffff;
+  color: var(--ink, #111827);
+  border: 1px solid #cbd5e1;
+  padding: 0.625rem 1.25rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+.btnSecondary:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.ticketMedia {
+  background: #e2e8f0;
+  position: relative;
+}
+
+.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photoLabel {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(17, 24, 39, 0.75);
+  color: #ffffff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}

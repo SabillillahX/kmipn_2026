@@ -18,7 +18,6 @@ export default function ProcessSection() {
       <div className="process-threads" aria-hidden="true"><span /><span /><span /></div>
       <div className="shell">
         <Reveal className="process-heading">
-          <div className="chapter-mark light"><span>03</span><i /></div>
           <small>DI BALIK SATU LAPORAN</small>
           <h2>Satu alur.<br /><em>Tanpa suara yang hilang.</em></h2>
         </Reveal>

@@ -1,10 +1,10 @@
 import { DashboardLayout } from '@/src/features/dashboard/components/DashboardLayout';
 
 export const metadata = {
-  title: 'Executive Dashboard - KMIPN 2026',
-  description: 'Government employee dashboard for regional issues',
+  title: 'Dashboard Eksekutif - Distrac',
+  description: 'Ringkasan pemantauan isu regional dan manajemen penanganan',
 };
 
 export default function DashboardPage() {
-  return <DashboardLayout />;
+  return <DashboardLayout page="eksekutif" />;
 }

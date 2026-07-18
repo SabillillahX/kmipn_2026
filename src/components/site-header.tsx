@@ -18,12 +18,7 @@ export default function SiteHeader() {
 
   return (
     <>
-      <div className="official-ribbon">
-        <div className="shell">
-          <p><span /> Kanal resmi pelayanan publik Kecamatan Sukamaju</p>
-          <p className="ribbon-meta">Jumat, 17 Juli 2026 <b>•</b> Bahasa Indonesia</p>
-        </div>
-      </div>
+
       <header className="site-header">
         <div className="shell header-grid">
           <Brand inverse />

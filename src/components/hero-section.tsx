@@ -41,13 +41,10 @@ export default function HeroSection() {
       <motion.div className="hero-orbit orbit-a" style={{ rotate: ornamentRotate }} />
       <motion.div className="hero-orbit orbit-b" style={{ rotate: ornamentRotate }} />
       <div className="coordinate-stamp">06°12&apos;S — 106°49&apos;E</div>
-      <div className="hero-ghost-word" aria-hidden="true">SPLIK</div>
+      <div className="hero-ghost-word" aria-hidden="true">Distrac</div>
 
       <div className="shell hero-layout">
         <motion.div className="hero-copy" style={{ y: smoothCopyY }}>
-          <motion.div className="hero-kicker" initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .7 }}>
-            <span>01</span><i /> Pelayanan publik berbasis kliring
-          </motion.div>
           <h1>
             <motion.span initial={{ y: 70, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: .85, ease: [0.16, 1, 0.3, 1] }}>
               Suaramu<br />menggerakkan
@@ -115,10 +112,6 @@ export default function HeroSection() {
           <a className="floating-map-link" href="#transparansi">Buka peta publik <ArrowRightIcon size={17} weight="bold" /></a>
           <div className="map-ornament-dots" aria-hidden="true">••••••<br />••••••<br />••••••</div>
         </motion.div>
-      </div>
-
-      <div className="hero-bottom-line">
-        <div className="shell"><span>Scroll untuk menjelajah</span><i /><span>Transparan • terukur • terhubung</span></div>
       </div>
     </section>
   );

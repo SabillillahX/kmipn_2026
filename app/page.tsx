@@ -1,13 +1,13 @@
-import HeroSection from "./components/hero-section";
-import ImpactSection from "./components/impact-section";
-import ProcessSection from "./components/process-section";
-import ReportExperience from "./components/report-experience";
-import SignalBand from "./components/signal-band";
-import SiteFooter from "./components/site-footer";
-import SiteHeader from "./components/site-header";
-import ScrollProgress from "./components/scroll-progress";
-import AmbientCursor from "./components/ambient-cursor";
-import SectionPortal from "./components/section-portal";
+import HeroSection from "../src/components/hero-section";
+import ImpactSection from "../src/components/impact-section";
+import ProcessSection from "../src/components/process-section";
+import ReportExperience from "../src/components/report-experience";
+import SignalBand from "../src/components/signal-band";
+import SiteFooter from "../src/components/site-footer";
+import SiteHeader from "../src/components/site-header";
+import ScrollProgress from "../src/components/scroll-progress";
+import AmbientCursor from "../src/components/ambient-cursor";
+import SectionPortal from "../src/components/section-portal";
 
 export default function Home() {
   return (

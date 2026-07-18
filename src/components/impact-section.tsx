@@ -1,8 +1,4 @@
-import { ArrowUpRightIcon } from "@phosphor-icons/react/dist/ssr/ArrowUpRight";
-import { ChartLineUpIcon } from "@phosphor-icons/react/dist/ssr/ChartLineUp";
-import { ClockCountdownIcon } from "@phosphor-icons/react/dist/ssr/ClockCountdown";
-import { StackIcon } from "@phosphor-icons/react/dist/ssr/Stack";
-import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr/UsersThree";
+import { ArrowUpRightIcon, ChartLineUpIcon, ClockCountdownIcon, StackIcon, UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
 import Reveal from "./reveal";
 
 const stats = [
@@ -14,10 +10,8 @@ const stats = [
 export default function ImpactSection() {
   return (
     <section className="impact-section" id="transparansi">
-      <div className="section-watermark" aria-hidden="true">DAMPAK</div>
       <div className="shell">
         <Reveal className="editorial-heading">
-          <div className="chapter-mark"><span>02</span><i /></div>
           <div>
             <small>BUKAN SEKADAR ANGKA</small>
             <h2>Pelayanan yang bisa<br /><em>dilihat hasilnya.</em></h2>
@@ -31,7 +25,7 @@ export default function ImpactSection() {
             <small>TINGKAT PENYELESAIAN / JULI</small>
             <strong>91<span>%</span></strong>
             <div className="completion-bar"><i /></div>
-            <p><b>1.136</b> dari 1.248 laporan telah diselesaikan dan pelapor sudah menerima pembaruan.</p>
+            <p><b>1.136</b> dari 1.248 laporan telah diselesaikan dan pelapor sudah menerima pembaruan.</p><br />
             <a href="#laporkan">Lihat laporan publik <ArrowUpRightIcon size={18} weight="bold" /></a>
             <div className="stat-orbit orbit-one" /><div className="stat-orbit orbit-two" />
           </Reveal>

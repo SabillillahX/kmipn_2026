@@ -15,9 +15,9 @@ export default function SiteFooter() {
           <div className="footer-brand"><Brand inverse /><p>Kanal resmi pelaporan publik yang menyatukan suara warga, data, dan tindakan pemerintah kecamatan.</p></div>
           <div><strong>Navigasi</strong><a href="#beranda">Beranda</a><a href="#peta-laporan">Peta laporan</a><a href="#transparansi">Transparansi</a><a href="#cara-kerja">Cara kerja</a></div>
           <div><strong>Layanan</strong><a href="#laporkan">Buat laporan</a><a href="#cek-status">Cek status</a><a href="#bantuan">Pusat bantuan</a><a href="#bantuan">Privasi</a></div>
-          <div><strong>Hubungi kami</strong><p>Senin—Jumat<br />08.00—16.00 WIB</p><a href="mailto:layanan@splik.go.id">layanan@splik.go.id</a><a href="tel:112">Darurat 112</a></div>
+          <div><strong>Hubungi kami</strong><p>Senin—Jumat<br />08.00—16.00 WIB</p><a href={`mailto:${process.env.SERVICE_EMAIL}`}>{process.env.SERVICE_EMAIL}</a><a href="tel:112">Darurat 112</a></div>
         </div>
-        <div className="shell footer-bottom"><span>© 2026 Pemerintah Kecamatan Sukamaju</span><span className="footer-motto">Transparan. Terukur. Terhubung.</span><a href="#beranda">Kembali ke atas ↑</a></div>
+
       </div>
     </footer>
   );

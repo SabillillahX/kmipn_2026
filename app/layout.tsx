@@ -1,33 +1,21 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Inter, Geist } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });
 
 const hanken = localFont({
   src: "../public/fonts/Hanken_Grotesk/HankenGrotesk-VariableFont_wght.ttf",
-  variable: "--font-body",
-  display: "swap",
-});
-
-const spartan = localFont({
-  src: "../public/fonts/League_Spartan/LeagueSpartan-VariableFont_wght.ttf",
   variable: "--font-display",
   display: "swap",
 });
 
-const cinzel = localFont({
-  src: "../public/fonts/Cinzel/Cinzel-VariableFont_wght.ttf",
-  variable: "--font-civic",
-  display: "swap",
-});
-
-const allura = localFont({
-  src: "../public/fonts/Allura/Allura-Regular.ttf",
-  variable: "--font-script",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: "SPLIK — Suaramu Menggerakkan Kota",
+  title: "Distrac — Suaramu Menggerakkan Kota",
   description: "Kanal resmi pelaporan publik Kecamatan Sukamaju. Laporkan, kawal, dan lihat perubahan nyata di lingkunganmu.",
   icons: {
     icon: "/brand/splik-emblem.png",
@@ -36,5 +24,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="id" className={`${hanken.variable} ${spartan.variable} ${cinzel.variable} ${allura.variable}`}><body>{children}</body></html>;
+  return <html lang="id" className={cn(inter.variable, hanken.variable, "font-sans", geist.variable)}><body>{children}</body></html>;
 }

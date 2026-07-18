@@ -19,7 +19,6 @@ export default function SectionPortal() {
         <span className="portal-ring ring-three" />
         <span className="portal-core"><i /> VERIFIED<br />PUBLIC SIGNAL</span>
       </motion.div>
-      <div className="portal-axis"><span>02 / 03</span><i /><span>Satu data, satu tindak lanjut</span></div>
     </div>
   );
 }
