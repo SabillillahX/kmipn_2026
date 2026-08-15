@@ -1,0 +1,11 @@
+import Link from "next/link";
+import { getLocalReport } from "@/app/lib/local-reports";
+import styles from "../status.module.css";
+
+const labels: Record<string, string> = { baru: "Laporan diterima", diverifikasi: "Sudah diverifikasi", diproses: "Dalam penanganan", selesai: "Selesai ditangani", ditolak: "Laporan ditolak" };
+
+export default async function ReportStatusPage({ params }: PageProps<"/status/[code]">) {
+  const { code } = await params; const report = await getLocalReport(code);
+  if (!report) return <main className={styles.page}><section className={styles.searchCard}><Link href="/status">← Coba kode lain</Link><p>KODE TIDAK DITEMUKAN</p><h1>Laporan belum<br /><em>kami temukan.</em></h1><span>Periksa kembali penulisan kode laporanmu.</span></section></main>;
+  return <main className={styles.detailPage}><header><Link href="/status">← Lacak kode lain</Link><Link href="/">Portal SPLIK</Link></header><section className={styles.statusHero}><div><p>PERJALANAN LAPORAN</p><h1>{report.code}</h1><span>Dikirim {new Intl.DateTimeFormat("id-ID", { dateStyle: "long", timeStyle: "short" }).format(new Date(report.createdAt))}</span></div><strong data-status={report.status}>{labels[report.status]}</strong></section><section className={styles.statusGrid}><article className={styles.summary}><p>RINGKASAN LAPORAN</p><h2>{report.description}</h2><dl><div><dt>Kategori</dt><dd>{report.category}</dd></div><div><dt>Prioritas</dt><dd>{report.priority}</dd></div><div><dt>Petugas</dt><dd>{report.assignedTo ?? "Belum ditugaskan"}</dd></div><div><dt>Lokasi</dt><dd><a target="_blank" rel="noreferrer" href={`https://www.openstreetmap.org/?mlat=${report.latitude}&mlon=${report.longitude}#map=18/${report.latitude}/${report.longitude}`}>Lihat peta ↗</a></dd></div></dl></article><article className={styles.timeline}><p>RIWAYAT PENANGANAN</p>{[...report.history].reverse().map((event, index) => <div className={styles.event} key={`${event.at}-${index}`}><i data-current={index === 0} /><span><b>{labels[event.status]}</b><small>{new Intl.DateTimeFormat("id-ID", { dateStyle: "long", timeStyle: "short" }).format(new Date(event.at))} · {event.actor}</small><p>{event.note}</p></span></div>)}</article></section></main>;
+}

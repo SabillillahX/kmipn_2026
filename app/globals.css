@@ -262,3 +262,18 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .ambient-cursor { display: none; }
   .tilt-surface { transform: none !important; }
 }
+
+/* Readability pass: operational text must remain legible at normal desktop zoom. */
+.official-ribbon { font-size: 12px; }
+.brand-words small { font-size: 10px; }
+.desktop-nav a,.status-search,.cta-pill { font-size: 13px; }
+.hero-kicker,.hero-assurance strong,.map-topline,.floating-map-link { font-size: 11px; }
+.hero-assurance small { font-size: 10px; }
+.chapter-mark,.editorial-heading > div:nth-child(2) > small,.process-heading > small,.report-message > small { font-size: 11px; }
+.privacy-note b,.report-form-card label > span { font-size: 11px; }
+.privacy-note small,.form-intro p,.form-disclaimer { font-size: 10px; }
+.form-corner-label,.form-intro > span { font-size: 9px; }
+.report-form-card input,.report-form-card select,.report-form-card textarea { font-size: 13px; }
+.location-field > button b { font-size: 12px; }.location-field > button small { font-size: 10px; }
+.send-report { font-size: 13px; }
+.footer-grid > div > strong,.footer-grid > div > a,.footer-grid > div > p,.footer-bottom { font-size: 10px; }
