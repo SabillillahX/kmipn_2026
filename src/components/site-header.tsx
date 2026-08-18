@@ -26,7 +26,7 @@ export default function SiteHeader() {
             {links.map(([label, href]) => <a href={href} key={href}>{label}</a>)}
           </nav>
           <div className="header-actions">
-            <a className="status-search" href="#cek-status">
+            <a className="status-search" href="/status">
               <MagnifyingGlassIcon size={18} weight="bold" />
               <span>Cek status</span>
             </a>
