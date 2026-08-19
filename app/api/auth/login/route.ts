@@ -2,8 +2,8 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createSession, verifyPassword } from "@/app/lib/auth";
-import { db } from "@/src/db";
-import { users } from "@/src/db/schema";
+import { db } from "@/src/database";
+import { users } from "@/src/database/schema";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   if (!email || !password) return NextResponse.json({ error: "Email dan password wajib diisi." }, { status: 400 });
   try {
     const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (!user || user.role !== "admin" || !(await verifyPassword(password, user.passwordHash))) return NextResponse.json({ error: "Email atau password tidak sesuai." }, { status: 401 });
+    if (!user || user.role !== "gov_employee" || !(await verifyPassword(password, user.passwordHash))) return NextResponse.json({ error: "Email atau password tidak sesuai." }, { status: 401 });
     await createSession(user.id);
     return NextResponse.json({ ok: true });
   } catch {

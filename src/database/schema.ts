@@ -8,7 +8,8 @@ import {
     timestamp,
     pgEnum,
     geometry,
-    index
+    index,
+    boolean
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -47,6 +48,14 @@ export const users = pgTable('users', {
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+export const sessions = pgTable('sessions', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    tokenHash: text('token_hash').unique().notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 export const tickets = pgTable('tickets', {
     id: uuid('id').defaultRandom().primaryKey(),
     category: reportCategoryEnum('category').notNull(),
@@ -71,6 +80,8 @@ export const reports = pgTable('reports', {
     damageLevel: integer('damage_level').notNull(),
     description: text('description').notNull(),
     location: geometry('location', { type: 'point', mode: 'xy', srid: 4326 }).notNull(),
+    aiRiskScore: integer('ai_risk_score').default(1).notNull(),
+    aiIsBlocked: boolean('ai_is_blocked').default(false).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
     locationIdx: index('reports_location_gist_idx').using('gist', table.location),

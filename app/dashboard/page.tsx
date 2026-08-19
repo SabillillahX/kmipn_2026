@@ -45,10 +45,32 @@ export default function DashboardPage() {
   const [active, setActive] = useState("Ringkasan");
   const [period, setPeriod] = useState("7 hari terakhir");
   const [data, setData] = useState<DashboardData | null>(null);
+  const [testing, setTesting] = useState(false);
   useEffect(() => { fetch("/api/dashboard").then((response) => response.ok ? response.json() : null).then(setData).catch(() => setData(null)); }, []);
   const metrics = data?.metrics ?? { total: 0, actionable: 0, inProgress: 0, resolved: 0 };
   const reportRows = data?.reports ?? [];
   const categoryCount = (name: string) => data?.categories?.[name] ?? 0;
+
+  const handleTestSpam = async () => {
+    if (testing) return;
+    setTesting(true);
+    try {
+      const seedRes = await fetch("/api/admin/seed-spam", { method: "POST" });
+      if (!seedRes.ok) throw new Error("Gagal menyuntikkan aduan spam.");
+      const clusterRes = await fetch("/api/admin/cluster", { method: "POST" });
+      if (!clusterRes.ok) throw new Error("Gagal menjalankan triage otomatis.");
+      const response = await fetch("/api/dashboard");
+      if (response.ok) {
+        const newData = await response.json();
+        setData(newData);
+      }
+      alert("Sukses menyuntikkan 50 aduan spam dan berhasil dikliring secara otomatis oleh AI!");
+    } catch (err: any) {
+      alert(err.message || "Terjadi kesalahan saat pengujian.");
+    } finally {
+      setTesting(false);
+    }
+  };
 
   return (
     <main className={styles.dashboard}>
@@ -84,7 +106,17 @@ export default function DashboardPage() {
 
         <div className={styles.pageHead}>
           <div><p className={styles.kicker}>PUSAT KENDALI LAYANAN</p><h1>Selamat pagi, {data?.user.name.split(" ")[0] ?? "Admin"}<span>.</span></h1><p>Berikut denyut layanan warga di Sukamaju hari ini.</p></div>
-          <button className={styles.primaryButton} onClick={() => window.location.assign("/#laporkan")}><PlusIcon size={18} weight="bold" /> Buat laporan</button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              className={styles.primaryButton}
+              style={{ backgroundColor: "#d97706" }}
+              onClick={handleTestSpam}
+              disabled={testing}
+            >
+              {testing ? "Memproses..." : "Uji Tahan Spam (50 Aduan)"}
+            </button>
+            <button className={styles.primaryButton} onClick={() => window.location.assign("/#laporkan")}><PlusIcon size={18} weight="bold" /> Buat laporan</button>
+          </div>
         </div>
 
         {active === "Laporan masuk" && <section className={styles.workPage}><div><p className={styles.kicker}>MANAJEMEN LAPORAN</p><h2>Semua laporan masuk</h2><p>Pilih laporan untuk memverifikasi, menugaskan petugas, dan memperbarui progres.</p></div><div className={styles.workList}>{reportRows.length ? reportRows.map((item) => <article key={item.id}><span><b>{item.code}</b><small>{item.category} · {new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(item.createdAt))}</small></span><strong>{item.description}</strong><em className={styles[`priority_${item.priority}`] ?? ""}>{item.status}</em><Link href={`/dashboard/laporan/${item.code}`}>Tangani →</Link></article>) : <div className={styles.emptyState}>Belum ada laporan. Coba kirim laporan dari portal publik untuk melihat data tampil di sini.</div>}</div></section>}

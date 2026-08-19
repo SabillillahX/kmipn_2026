@@ -7,7 +7,7 @@ async function seed() {
         await db.insert(users).values({
             name: "Gov Employee Kocak",
             email: "kocak@gmail.com",
-            passwordHash: "kocak123", // Using plain password based on the prompt instructions, ideally this should be hashed.
+            passwordHash: "kocak123",
             role: "gov_employee",
         });
         console.log("Seeding completed successfully.");

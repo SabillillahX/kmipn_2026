@@ -15,6 +15,34 @@
       "when": 1784292058282,
       "tag": "0001_clever_inertia",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787038079140,
+      "tag": "0002_pale_taskmaster",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787038502668,
+      "tag": "0003_freezing_sway",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787058155319,
+      "tag": "0004_curved_supreme_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787058202164,
+      "tag": "0005_hot_marauders",
+      "breakpoints": true
     }
   ]
 }

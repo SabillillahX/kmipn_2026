@@ -5,8 +5,9 @@ import { CrosshairIcon } from "@phosphor-icons/react/dist/csr/Crosshair";
 import { MapPinIcon } from "@phosphor-icons/react/dist/csr/MapPin";
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/csr/PaperPlaneTilt";
 import { SealCheckIcon } from "@phosphor-icons/react/dist/csr/SealCheck";
+import { Copy } from "@phosphor-icons/react/dist/csr/Copy";
 import { motion } from "motion/react";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 export default function ReportExperience() {
   const [latitude, setLatitude] = useState<number | null>(null);
@@ -18,6 +19,89 @@ export default function ReportExperience() {
   const [reference, setReference] = useState("");
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const mapRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(reference);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    document.head.appendChild(link);
+
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    script.async = true;
+    script.onload = () => {
+      const L = (window as any).L;
+      if (!L) return;
+
+      const defaultLat = latitude ?? -7.06580;
+      const defaultLng = longitude ?? 110.42918;
+
+      const map = L.map("map-picker").setView([defaultLat, defaultLng], 15);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap"
+      }).addTo(map);
+
+      const pinIcon = L.divIcon({
+        html: `<svg width="30" height="42" viewBox="0 0 30 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+                 <path d="M15 0C6.71573 0 0 6.71573 0 15C0 26.25 15 42 15 42C15 42 30 26.25 30 15C30 6.71573 23.2843 0 15 0ZM15 20.25C12.1005 20.25 9.75 17.8995 9.75 15C9.75 12.1005 12.1005 9.75 15 9.75C17.8995 9.75 20.25 12.1005 20.25 15C20.25 17.8995 17.8995 20.25 15 20.25Z" fill="#c94e40"/>
+               </svg>`,
+        className: "",
+        iconSize: [30, 42],
+        iconAnchor: [15, 42]
+      });
+
+      const marker = L.marker([defaultLat, defaultLng], { draggable: true, icon: pinIcon }).addTo(map);
+
+      const updatePosition = (lat: number, lng: number) => {
+        setLatitude(lat);
+        setLongitude(lng);
+        setCoordinates({ latitude: lat, longitude: lng });
+        setLocationLabel(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+      };
+
+      marker.on("dragend", () => {
+        const pos = marker.getLatLng();
+        updatePosition(pos.lat, pos.lng);
+      });
+
+      map.on("click", (e: any) => {
+        marker.setLatLng(e.latlng);
+        updatePosition(e.latlng.lat, e.latlng.lng);
+      });
+
+      mapRef.current = map;
+      markerRef.current = marker;
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+      document.head.removeChild(link);
+      document.head.removeChild(script);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (latitude !== null && longitude !== null && mapRef.current && markerRef.current) {
+      mapRef.current.setView([latitude, longitude], 16);
+      markerRef.current.setLatLng([latitude, longitude]);
+    }
+  }, [latitude, longitude]);
 
   function locate() {
     setLocating(true);
@@ -28,8 +112,10 @@ export default function ReportExperience() {
     }
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        setLocation(`${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`);
+        setLocationLabel(`${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`);
         setCoordinates({ latitude: coords.latitude, longitude: coords.longitude });
+        setLatitude(coords.latitude);
+        setLongitude(coords.longitude);
         setLocating(false);
       },
       () => {
@@ -76,7 +162,17 @@ export default function ReportExperience() {
               <small>LAPORAN TEREKAM</small>
               <h3>Suaramu sudah masuk.</h3>
               <p>Simpan kode ini untuk mengikuti setiap perkembangan laporan.</p>
-              <strong>{reference}</strong>
+              <strong style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+                {reference}
+                <button type="button" onClick={handleCopy} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", padding: "4px", display: "inline-flex", alignItems: "center" }}>
+                  <Copy size={20} />
+                </button>
+              </strong>
+              {copied && (
+                <p style={{ color: "#22c55e", fontSize: "0.85rem", margin: "4px 0 0 0", textAlign: "center" }}>
+                  kode telah tersalin
+                </p>
+              )}
               <button type="button" onClick={() => setSubmitted(false)}>Buat laporan lainnya ↗</button>
             </motion.div>
           ) : (
@@ -86,7 +182,10 @@ export default function ReportExperience() {
                 <label><span>Kategori *</span><select name="category" required defaultValue=""><option value="" disabled>Pilih masalah</option><option>Infrastruktur</option><option>Lingkungan & kebersihan</option><option>Penerangan jalan</option><option>Kesehatan lingkungan</option></select></label>
                 <label><span>Tingkat kerusakan *</span><select name="severity" required defaultValue=""><option value="" disabled>Pilih tingkat</option><option>Ringan</option><option>Sedang</option><option>Berat</option></select></label>
               </div>
-              <label className="location-field"><span>Lokasi kejadian *</span><button type="button" onClick={locate}><i><CrosshairIcon size={23} weight="duotone" /></i><span><b>{locating ? "Mencari titikmu..." : "Gunakan lokasi saya"}</b><small>{location}</small></span><MapPinIcon size={19} weight="fill" /></button></label>
+              <label className="location-field"><span>Lokasi kejadian *</span><button type="button" onClick={locate}><i><CrosshairIcon size={23} weight="duotone" /></i><span><b>{locating ? "Mencari titikmu..." : "Gunakan lokasi saya"}</b><small>{locationLabel}</small></span><MapPinIcon size={19} weight="fill" /></button></label>
+              <div style={{ width: "100%", height: "300px", marginTop: "10px", borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0", zIndex: 10, position: "relative" }}>
+                <div id="map-picker" style={{ width: "100%", height: "100%" }} />
+              </div>
               <label className="full-field"><span>Deskripsi *</span><textarea name="description" required rows={4} minLength={10} placeholder="Apa yang terjadi? Sertakan patokan lokasi dan dampaknya..." /></label>
               <label className="full-field"><span>Nomor WhatsApp *</span><input name="contactPhone" required type="tel" inputMode="tel" placeholder="08xx xxxx xxxx" /></label>
               {error && <p className="form-disclaimer" role="alert" style={{ color: "#c94e40" }}>{error}</p>}

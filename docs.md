@@ -16,4 +16,9 @@
             NONE
         ```
         
-
+## How to add pip package to our local library
+1. install any libraries you need
+2. upload to requirements.txt
+```bash
+    pip freeze > requirements.txt
+```

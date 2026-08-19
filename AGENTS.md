@@ -20,32 +20,3 @@
 * All persistent data is managed through Drizzle ORM, which connects to a PostgreSQL database.
 * The architecture strictly requires the PostGIS extension within PostgreSQL to handle complex spatial queries, particularly for the Lock Flag Method.
 * The entire system architecture is portable and designed to be deployed using docker-compose.
-
-## Fullstack Folder Architecture
-/
-├── public/
-├── app/
-├── src/
-│    ├── components/          # Global component
-│    │
-│    ├── database/        
-│    │    ├── index.ts
-│    │    └── schema.ts       
-│    │
-│    ├── features/
-│    │    └── {any_features}/
-│    │          ├── actions/
-│    │          ├── components/
-│    │          ├── schemas/
-│    │          └── services/
-│    │
-│    ├── styles/          
-│    │    ├── {any_features}.module.css
-│    │    └── globals.css     
-│    │
-│    ├── hooks/
-│    ├── lib/
-│    ├── types/
-│    └── utils/
-│
-└── middleware.ts

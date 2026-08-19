@@ -3,8 +3,11 @@ services:
     build:
       context: ./ai-backend
     restart: unless-stopped
+    container_name: python
     volumes:
       - ./ai-backend:/app
+    environment:
+      - HF_HOME=/app/.cache/huggingface
     env_file:
       - .env
     ports:

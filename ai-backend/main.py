@@ -1,9 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.api import routes
+from app.services.llm_service import load_model
 
-app = FastAPI(title=settings.PROJECT_NAME)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    load_model()
+    yield
+
+app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan)
 
 origins = [
     "http://localhost:3000",
@@ -18,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(routes.router, prefix="/api/v1") 
+app.include_router(routes.router, prefix="/api/v1")
 
 @app.get("/")
 def read_root():

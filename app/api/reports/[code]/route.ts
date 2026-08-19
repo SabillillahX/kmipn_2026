@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getLocalReport } from "@/app/lib/local-reports";
 
-export async function GET(_request: Request, context: RouteContext<"/api/reports/[code]">) {
+export async function GET(_request: Request, context: { params: Promise<{ code: string }> }) {
   const { code } = await context.params;
   const report = await getLocalReport(code);
   if (!report) return NextResponse.json({ error: "Kode laporan tidak ditemukan." }, { status: 404 });
