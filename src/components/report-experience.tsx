@@ -45,6 +45,16 @@ export default function ReportExperience() {
       const L = (window as any).L;
       if (!L) return;
 
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+
+      const container = document.getElementById("map-picker");
+      if (container && (container as any)._leaflet_id) {
+        (container as any)._leaflet_id = null;
+      }
+
       const defaultLat = latitude ?? -7.06580;
       const defaultLng = longitude ?? 110.42918;
 

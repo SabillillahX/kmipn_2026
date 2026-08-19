@@ -4,6 +4,7 @@ import { getLocalReports } from "@/app/lib/local-reports";
 import { db } from "@/src/database";
 import { reports, tickets } from "@/src/database/schema";
 import MapClient from "./map-client";
+import ReportListClient from "./report-list-client";
 import styles from "./map.module.css";
 
 export default async function DashboardMapPage() {
@@ -17,6 +18,8 @@ export default async function DashboardMapPage() {
     longitude: number;
     priority: string;
     status: string;
+    contactPhone: string;
+    createdAt: string;
   }> = [];
 
   try {
@@ -27,12 +30,14 @@ export default async function DashboardMapPage() {
         damageLevel: reports.damageLevel,
         description: reports.description,
         location: reports.location,
-        ticketStatus: tickets.status
+        ticketStatus: tickets.status,
+        reporterPhone: reports.reporterPhone,
+        createdAt: reports.createdAt
       })
       .from(reports)
       .leftJoin(tickets, eq(reports.ticketId, tickets.id))
       .orderBy(desc(reports.createdAt))
-      .limit(50);
+      .limit(100);
 
     const catLabelMap: Record<string, string> = {
       INFRASTRUKTUR: "Infrastruktur",
@@ -61,12 +66,14 @@ export default async function DashboardMapPage() {
         latitude: lat,
         longitude: lng,
         priority,
-        status
+        status,
+        contactPhone: row.reporterPhone,
+        createdAt: row.createdAt.toISOString()
       };
     });
   } catch {
     const local = await getLocalReports();
-    points = local.slice(0, 50).map((report) => {
+    points = local.slice(0, 100).map((report) => {
       let status = "baru";
       if (report.status === "diproses") status = "diproses";
       else if (report.status === "selesai") status = "selesai";
@@ -78,7 +85,9 @@ export default async function DashboardMapPage() {
         latitude: report.latitude,
         longitude: report.longitude,
         priority: report.priority,
-        status
+        status,
+        contactPhone: report.contactPhone,
+        createdAt: report.createdAt
       };
     });
   }
@@ -89,14 +98,7 @@ export default async function DashboardMapPage() {
       <h1>Peta laporan warga</h1>
       <p>{points.length} titik laporan ditampilkan. Marker memakai koordinat geografis asli dan dapat diklik untuk membuka penanganan.</p>
       <MapClient points={points} />
-      <section className={styles.list}>
-        {points.map((item, index) => (
-          <a key={item.id} href={`/dashboard/laporan/${item.code}`}>
-            <span><b>{index + 1}. {item.code}</b> · {item.category}</span>
-            <em data-priority={item.priority}>{item.status} →</em>
-          </a>
-        ))}
-      </section>
+      <ReportListClient points={points} />
     </main>
   );
 }

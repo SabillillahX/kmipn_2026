@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       description,
       location: { x: longitude, y: latitude }
     }).returning({ id: reports.id });
-    return NextResponse.json({ code: inserted.id }, { status: 201 });
+    return NextResponse.json({ code: `REP-${inserted.id.slice(0, 6).toUpperCase()}` }, { status: 201 });
   } catch {
     if (process.env.NODE_ENV !== "development") return NextResponse.json({ error: "Database laporan belum tersedia." }, { status: 503 });
     const report = await createLocalReport({ category, severity, description, contactPhone, latitude, longitude, priority: severityToPriority[severity] });

@@ -20,6 +20,12 @@ export async function GET() {
     resolvedAt: Date | null;
   }> = [];
   let local = false;
+  let rawReports: Array<{
+    category: string;
+    status: string;
+    createdAt: Date;
+    resolvedAt: Date | null;
+  }> = [];
   try {
     const dbRows = await db
       .select({
@@ -111,6 +117,23 @@ export async function GET() {
 
     processedRows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     rows = processedRows;
+
+    rawReports = dbRows.map(row => {
+      let status = "baru";
+      if (row.ticketId) {
+        if (row.ticketStatus === "SELESAI") {
+          status = "selesai";
+        } else if (row.ticketStatus === "DIPROSES_OPD" || row.ticketStatus === "SHARED_LOCK") {
+          status = "diproses";
+        }
+      }
+      return {
+        category: catLabelMap[row.category] ?? row.category,
+        status,
+        createdAt: row.createdAt,
+        resolvedAt: (row.ticketId && row.ticketStatus === "SELESAI") ? row.ticketUpdatedAt : null
+      };
+    });
   } catch (err) {
     local = true;
     rows = (await getLocalReports()).map(({ history: _history, ...report }) => {
@@ -126,16 +149,51 @@ export async function GET() {
         resolvedAt: report.resolvedAt ? new Date(report.resolvedAt) : null
       };
     });
+
+    rawReports = rows.map(r => ({
+      category: r.category,
+      status: r.status,
+      createdAt: r.createdAt,
+      resolvedAt: r.resolvedAt
+    }));
   }
+
   const now = Date.now();
   const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-  const actionable = rows.filter((report) => report.status === "baru" || report.status === "diproses");
-  const resolved = rows.filter((report) => report.status === "selesai");
+  const actionable = rawReports.filter((report) => report.status === "baru" || report.status === "diproses");
+  const resolved = rawReports.filter((report) => report.status === "selesai");
+
   const chart = Array.from({ length: 7 }, (_, index) => {
-    const day = new Date(now - (6 - index) * 86400000); day.setHours(0, 0, 0, 0);
+    const day = new Date(now - (6 - index) * 86400000);
+    day.setHours(0, 0, 0, 0);
     const next = new Date(day.getTime() + 86400000);
-    return { label: new Intl.DateTimeFormat("id-ID", { weekday: "short" }).format(day), masuk: rows.filter((report) => report.createdAt >= day && report.createdAt < next).length, selesai: rows.filter((report) => report.resolvedAt && report.resolvedAt >= day && report.resolvedAt < next).length };
+    return {
+      label: new Intl.DateTimeFormat("id-ID", { weekday: "short" }).format(day),
+      masuk: rawReports.filter((report) => report.createdAt >= day && report.createdAt < next).length,
+      selesai: rawReports.filter((report) => report.resolvedAt && report.resolvedAt >= day && report.resolvedAt < next).length
+    };
   });
-  const categories = rows.reduce<Record<string, number>>((counts, report) => { counts[report.category] = (counts[report.category] ?? 0) + 1; return counts; }, {});
-  return NextResponse.json({ user, metrics: { total: rows.length, actionable: actionable.length, inProgress: rows.filter((report) => report.status === "diproses").length, resolved: resolved.filter((report) => report.resolvedAt && report.resolvedAt.getTime() >= sevenDaysAgo).length }, categories, chart, reports: rows.slice(0, 10).map((report) => ({ ...report, createdAt: report.createdAt.toISOString(), resolvedAt: report.resolvedAt?.toISOString() ?? null })), local });
+
+  const categories = rawReports.reduce<Record<string, number>>((counts, report) => {
+    counts[report.category] = (counts[report.category] ?? 0) + 1;
+    return counts;
+  }, {});
+
+  return NextResponse.json({
+    user,
+    metrics: {
+      total: rawReports.length,
+      actionable: actionable.length,
+      inProgress: rawReports.filter((report) => report.status === "diproses").length,
+      resolved: resolved.filter((report) => report.resolvedAt && report.resolvedAt.getTime() >= sevenDaysAgo).length
+    },
+    categories,
+    chart,
+    reports: rows.slice(0, 10).map((report) => ({
+      ...report,
+      createdAt: report.createdAt.toISOString(),
+      resolvedAt: report.resolvedAt?.toISOString() ?? null
+    })),
+    local
+  });
 }

@@ -28,7 +28,13 @@ blockage_anchors = [
 def load_model():
     global tokenizer, model, danger_embeddings, blockage_embeddings
     tokenizer = AutoTokenizer.from_pretrained(settings.MODEL_NAME)
-    model = AutoModel.from_pretrained(settings.MODEL_NAME).to(settings.DEVICE)
+    raw_model = AutoModel.from_pretrained(settings.MODEL_NAME).to(settings.DEVICE)
+    if settings.DEVICE == "cpu":
+        model = torch.quantization.quantize_dynamic(
+            raw_model, {torch.nn.Linear}, dtype=torch.qint8
+        )
+    else:
+        model = raw_model
     model.eval()
     danger_embeddings = get_embeddings(danger_anchors)
     blockage_embeddings = get_embeddings(blockage_anchors)
