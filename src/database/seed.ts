@@ -8,7 +8,7 @@ async function seed() {
             name: "Gov Employee Kocak",
             email: "kocak@gmail.com",
             passwordHash: "kocak123",
-            role: "gov_employee",
+            role: "ADMIN",
         });
         console.log("Seeding completed successfully.");
     } catch (e) {

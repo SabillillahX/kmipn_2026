@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/src/database";
-import { reports } from "@/src/database/schema";
+import { districts, reports } from "@/src/database/schema";
+import { sql } from "drizzle-orm";
 import { createLocalReport } from "@/app/lib/local-reports";
 
 const categories = new Set(["Infrastruktur", "Lingkungan & kebersihan", "Penerangan jalan", "Kesehatan lingkungan"]);
@@ -23,12 +24,17 @@ export async function POST(request: Request) {
   const longitude = Number(body?.longitude);
   if (!categories.has(category) || !severityToPriority[severity] || description.length < 10 || !contactPhone || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return NextResponse.json({ error: "Data laporan belum lengkap atau lokasi belum dipilih." }, { status: 400 });
   try {
+    // The boundary is managed by the system admin; no client supplied district is trusted.
+    const [district] = await db.select({ id: districts.id }).from(districts)
+      .where(sql`ST_Contains(${districts.boundary}, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326))`)
+      .limit(1);
     const [inserted] = await db.insert(reports).values({
       reporterPhone: contactPhone,
       category: categoryMap[category],
       damageLevel: severityToLevel[severity],
       description,
-      location: { x: longitude, y: latitude }
+      location: { x: longitude, y: latitude },
+      districtId: district?.id,
     }).returning({ id: reports.id });
     return NextResponse.json({ code: `REP-${inserted.id.slice(0, 6).toUpperCase()}` }, { status: 201 });
   } catch {

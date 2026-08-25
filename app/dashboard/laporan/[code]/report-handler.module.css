@@ -100,6 +100,32 @@
   color: #2979ff;
 }
 
+.images {
+  margin-top: 22px;
+  border-top: 1px solid #e3e8e6;
+  padding-top: 11px;
+}
+
+.images dt {
+  color: #849197;
+  font-size: 10px;
+}
+
+.images > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin-top: 9px;
+}
+
+.images img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid #d7e0dd;
+  object-fit: cover;
+}
+
 .action form {
   display: grid;
   gap: 14px;

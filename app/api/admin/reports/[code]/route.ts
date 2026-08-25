@@ -98,7 +98,7 @@ export async function GET(_request: Request, context: { params: Promise<{ code: 
       longitude: lng,
       priority,
       status,
-      assignedTo: ticket.assignedToRole === "gov_employee" ? "Petugas Uji Lapangan" : null,
+      assignedTo: ticket.assignedToRole === "OPD" ? "Petugas OPD" : null,
       createdAt: ticket.createdAt.toISOString(),
       history,
       reports: ticketReports.map((r) => ({
@@ -189,7 +189,7 @@ export async function GET(_request: Request, context: { params: Promise<{ code: 
           longitude: lng,
           priority,
           status,
-          assignedTo: ticket.assignedToRole === "gov_employee" ? "Petugas Uji Lapangan" : null,
+          assignedTo: ticket.assignedToRole === "OPD" ? "Petugas OPD" : null,
           createdAt: ticket.createdAt.toISOString(),
           history,
           reports: ticketReports.map((r) => ({
@@ -212,6 +212,7 @@ export async function GET(_request: Request, context: { params: Promise<{ code: 
         category: report.category,
         centroidLocation: report.location,
         status: "MENUNGGU_KLIRING",
+        districtId: report.districtId,
         reportCount: 1,
       })
       .returning();
@@ -303,7 +304,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ code:
       .update(tickets)
       .set({
         status: dbStatus,
-        assignedToRole: body.assignedTo ? "gov_employee" : null,
+        assignedToRole: body.assignedTo ? "OPD" : null,
         updatedAt: new Date(),
       })
       .where(eq(tickets.id, ticket.id));
@@ -406,6 +407,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ code:
           category: report.category,
           centroidLocation: report.location,
           status: "MENUNGGU_KLIRING",
+          districtId: report.districtId,
           reportCount: 1,
         })
         .returning();
@@ -436,7 +438,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ code:
       .update(tickets)
       .set({
         status: dbStatus,
-        assignedToRole: body.assignedTo ? "gov_employee" : null,
+        assignedToRole: body.assignedTo ? "OPD" : null,
         updatedAt: new Date(),
       })
       .where(eq(tickets.id, ticketId));
