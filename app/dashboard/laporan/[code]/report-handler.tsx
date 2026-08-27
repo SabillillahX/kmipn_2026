@@ -47,6 +47,7 @@ function enqueueGeocode(lat: number, lon: number): Promise<string> {
 
 
 type History = { status: string; note: string; at: string; actor: string };
+type ReportImage = { id: string; reportId: string; url: string };
 type SubReport = {
   id: string;
   code: string;
@@ -80,6 +81,8 @@ export default function ReportHandler({ code }: { code: string }) {
   const [pending, setPending] = useState(false);
   const [clusterSearch, setClusterSearch] = useState("");
   const [clusterCurrentPage, setClusterCurrentPage] = useState(1);
+  const [images, setImages] = useState<ReportImage[]>([]);
+  const [proofImages, setProofImages] = useState<ReportImage[]>([]);
   const clusterItemsPerPage = 10;
   const [addresses, setAddresses] = useState<Record<string, string>>({});
   const resolvedRef = useRef<Record<string, boolean>>({});
@@ -112,6 +115,18 @@ export default function ReportHandler({ code }: { code: string }) {
         setReport(data);
       })
       .catch((reason) => setError(reason.message));
+  }, [code]);
+
+  useEffect(() => {
+    if (!code.toUpperCase().startsWith("TK-")) return;
+    fetch(`/api/opd/tickets/${encodeURIComponent(code)}/proof`).then(async (response) => response.ok ? response.json() : Promise.reject()).then((data) => setProofImages(data.images ?? [])).catch(() => setProofImages([]));
+  }, [code]);
+
+  useEffect(() => {
+    fetch(`/api/reports/${encodeURIComponent(code)}/attachments`)
+      .then(async (response) => response.ok ? response.json() : Promise.reject())
+      .then((data) => setImages(data.images ?? []))
+      .catch(() => setImages([]));
   }, [code]);
 
   const formatDate = (dateStr: string) => {
@@ -228,6 +243,8 @@ export default function ReportHandler({ code }: { code: string }) {
               <dd>{report.assignedTo ?? "Belum ditugaskan"}</dd>
             </div>
           </dl>
+          {images.length > 0 && <div className={styles.images}><dt>Foto pendukung ({images.length})</dt><div>{images.map((image, index) => <a key={image.id} href={image.url} target="_blank" rel="noreferrer"><img src={image.url} alt={`Foto laporan ${index + 1}`} /></a>)}</div></div>}
+          {proofImages.length > 0 && <div className={styles.images}><dt>Bukti penyelesaian OPD ({proofImages.length})</dt><div>{proofImages.map((image, index) => <a key={image.id} href={image.url} target="_blank" rel="noreferrer"><img src={image.url} alt={`Bukti penyelesaian ${index + 1}`} /></a>)}</div></div>}
         </article>
         <article className={styles.action}>
           <p>PERBARUI PENANGANAN</p>

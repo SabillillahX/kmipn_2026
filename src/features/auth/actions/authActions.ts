@@ -22,7 +22,7 @@ export async function loginAction(formData: FormData) {
     return { error: 'Invalid email or password' };
   }
 
-  if (user.role !== 'gov_employee') {
+  if (!user.role) {
     return { error: 'Access denied: Insufficient privileges' };
   }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   LockKeyIcon,
   MapPinLineIcon,
@@ -294,6 +294,21 @@ function EksekutifContent() {
 }
 
 function OpdContent() {
+  const [zones, setZones] = useState<Array<{ code: string; district: string; radiusMeters: number; createdAt: string; latitude: number; longitude: number }>>([]);
+  const [liveData, setLiveData] = useState<{ tickets: Array<{ code: string; category: string; status: string; latitude: number; longitude: number }>; notifications: Array<{ id: string; title: string; message: string; createdAt: string; readAt: string | null }> }>({ tickets: [], notifications: [] });
+  const [zonesError, setZonesError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/opd/zones")
+      .then(async (response) => response.ok ? response.json() : Promise.reject(await response.json()))
+      .then(setZones)
+      .catch((error) => setZonesError(error?.error ?? "Zona aktif tidak dapat dimuat."));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/opd/dashboard").then(async (response) => response.ok ? response.json() : Promise.reject()).then(setLiveData).catch(() => undefined);
+  }, []);
+
   return (
     <>
       <header className={styles.header}>
@@ -303,6 +318,22 @@ function OpdContent() {
           Anda.
         </p>
       </header>
+
+      <Card className="mb-5 border-amber-200 bg-amber-50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2"><LockKeyIcon size={22} weight="duotone" /> Zona aktif di wilayah kerja</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {zonesError ? <p className="text-sm text-red-700">{zonesError}</p> : zones.length ? (
+            <div className="flex flex-wrap gap-3">{zones.map((zone) => <a key={zone.code} href={`https://www.openstreetmap.org/?mlat=${zone.latitude}&mlon=${zone.longitude}#map=17/${zone.latitude}/${zone.longitude}`} target="_blank" rel="noreferrer"><Badge variant="secondary">{zone.code} · {zone.district} · radius {zone.radiusMeters} m · lihat peta</Badge></a>)}</div>
+          ) : <p className="text-sm text-slate-600">Tidak ada zona terkunci. Memulai progres tiket akan mengunci radius 500 meter secara default.</p>}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 mb-5 lg:grid-cols-2">
+        <Card><CardHeader><CardTitle>Tiket saya</CardTitle></CardHeader><CardContent>{liveData.tickets.length ? <div className="space-y-2">{liveData.tickets.map((ticket) => <a className="block rounded border p-3 hover:bg-slate-50" href={`/dashboard/laporan/${ticket.code}`} key={ticket.code}><b>{ticket.code}</b><span className="ml-2 text-sm text-slate-600">{ticket.category} · {ticket.status}</span></a>)}</div> : <p className="text-sm text-slate-500">Belum ada tiket yang ditugaskan secara langsung kepada Anda.</p>}</CardContent></Card>
+        <Card><CardHeader><CardTitle>Notifikasi</CardTitle></CardHeader><CardContent>{liveData.notifications.length ? <div className="space-y-3">{liveData.notifications.map((notification) => <div key={notification.id} className="border-b pb-2"><b className="text-sm">{notification.title}</b><p className="m-0 text-sm text-slate-600">{notification.message}</p></div>)}</div> : <p className="text-sm text-slate-500">Belum ada notifikasi baru.</p>}</CardContent></Card>
+      </div>
 
       <div className={styles.queueList}>
         <Card className="overflow-hidden">
