@@ -1367,7 +1367,7 @@ a {
 .process-section {
   position: relative;
   overflow: hidden;
-  background: var(--ink-2);
+  background: linear-gradient(135deg, #162338 0%, #1f2937 58%, #1a2638 100%);
   padding: 130px 0 140px;
   color: white;
 }
@@ -1402,7 +1402,8 @@ a {
 
 .process-heading h2 em {
   font-style: normal;
-  color: var(--ink);
+  color: #9fc7f0;
+  text-shadow: 0 2px 18px rgba(37, 99, 235, .18);
 }
 
 .process-grid {
@@ -1416,14 +1417,15 @@ a {
 .process-card {
   position: relative;
   min-height: 340px;
-  border: 1px solid var(--line-dark);
+  border: 1px solid rgba(184, 211, 239, .2);
   border-right: 0;
+  background: rgba(12, 28, 49, .34);
   padding: 32px 28px;
   transition: background .35s, transform .35s;
 }
 
 .process-card:last-child {
-  border-right: 1px solid var(--line-dark);
+  border-right: 1px solid rgba(184, 211, 239, .2);
 }
 
 .process-card:hover {
@@ -1478,9 +1480,9 @@ a {
 
 .process-card p {
   margin: 0;
-  color: #9bb0c3;
+  color: #c5d5e5;
   font-size: 20px;
-  line-height: 1.7;
+  line-height: 1.65;
   transition: color .35s;
 }
 
@@ -1490,7 +1492,7 @@ a {
   bottom: 28px;
   left: 28px;
   height: 1px;
-  background: var(--line-dark);
+  background: rgba(184, 211, 239, .22);
 }
 
 .process-line i {
@@ -2377,7 +2379,7 @@ a {
 }
 
 .process-card-reveal:last-child .process-card {
-  border-right: 1px solid var(--line-dark);
+  border-right: 1px solid rgba(184, 211, 239, .2);
 }
 
 .process-card:hover {
@@ -2450,7 +2452,7 @@ a {
   }
 
   .process-card:nth-child(2) {
-    border-right: 1px solid var(--line-dark);
+    border-right: 1px solid rgba(184, 211, 239, .2);
   }
 
   .process-card:nth-child(-n+2) {
@@ -2473,7 +2475,7 @@ a {
 
 @media (max-width: 1080px) and (min-width: 761px) {
   .process-card-reveal:nth-child(2n) .process-card {
-    border-right: 1px solid var(--line-dark);
+    border-right: 1px solid rgba(184, 211, 239, .2);
   }
 
   .process-card-reveal:nth-child(-n+2) .process-card {
@@ -2646,12 +2648,12 @@ a {
 
   .process-card {
     min-height: 270px;
-    border-right: 1px solid var(--line-dark);
+    border-right: 1px solid rgba(184, 211, 239, .2);
     border-bottom: 0;
   }
 
   .process-card:last-child {
-    border-bottom: 1px solid var(--line-dark);
+    border-bottom: 1px solid rgba(184, 211, 239, .2);
   }
 
   .process-card h3 {
@@ -2659,12 +2661,12 @@ a {
   }
 
   .process-card-reveal .process-card {
-    border-right: 1px solid var(--line-dark);
+    border-right: 1px solid rgba(184, 211, 239, .2);
     border-bottom: 0;
   }
 
   .process-card-reveal:last-child .process-card {
-    border-bottom: 1px solid var(--line-dark);
+    border-bottom: 1px solid rgba(184, 211, 239, .2);
   }
 
   .section-portal {
@@ -2949,4 +2951,55 @@ a {
   html {
     @apply font-sans;
   }
+}
+
+.report-image-field input[type="file"] {
+  height: auto;
+  padding: 9px;
+  font-size: 15px;
+}
+
+.report-image-field>small,
+.report-image-field>span small {
+  color: #71808b;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.report-image-previews {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.report-image-previews img {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid #cfd6da;
+  object-fit: cover;
+}
+
+.report-image-preview {
+  position: relative;
+}
+
+.report-image-preview img {
+  display: block;
+}
+
+.report-image-preview button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(17, 24, 39, .84);
+  color: white;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
 }

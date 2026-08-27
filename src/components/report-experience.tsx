@@ -7,7 +7,7 @@ import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/csr/PaperPlaneTil
 import { SealCheckIcon } from "@phosphor-icons/react/dist/csr/SealCheck";
 import { Copy } from "@phosphor-icons/react/dist/csr/Copy";
 import { motion } from "motion/react";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 
 export default function ReportExperience() {
   const [latitude, setLatitude] = useState<number | null>(null);
@@ -20,6 +20,8 @@ export default function ReportExperience() {
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
@@ -28,6 +30,22 @@ export default function ReportExperience() {
     navigator.clipboard.writeText(reference);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  function selectImages(event: ChangeEvent<HTMLInputElement>) {
+    const remaining = 5 - images.length;
+    const nextImages = Array.from(event.target.files ?? []).slice(0, remaining);
+    setImages((current) => [...current, ...nextImages]);
+    setImagePreviews((current) => [...current, ...nextImages.map((file) => URL.createObjectURL(file))]);
+    event.currentTarget.value = "";
+  }
+
+  function removeImage(index: number) {
+    setImages((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setImagePreviews((current) => {
+      URL.revokeObjectURL(current[index]);
+      return current.filter((_, itemIndex) => itemIndex !== index);
+    });
   }
 
   useEffect(() => {
@@ -145,6 +163,15 @@ export default function ReportExperience() {
     const data = await response.json();
     setSending(false);
     if (!response.ok) { setError(data.error ?? "Laporan belum dapat dikirim."); return; }
+    if (images.length) {
+      const imageData = new FormData();
+      images.forEach((image) => imageData.append("images", image));
+      const upload = await fetch(`/api/reports/${encodeURIComponent(data.code)}/attachments`, { method: "POST", body: imageData });
+      if (!upload.ok) {
+        const uploadError = await upload.json().catch(() => ({}));
+        setError(`Laporan sudah terkirim, tetapi foto gagal disimpan: ${uploadError.error ?? "coba unggah kembali dari detail laporan."}`);
+      }
+    }
     setReference(data.code); setSubmitted(true);
   }
 
@@ -197,6 +224,7 @@ export default function ReportExperience() {
                 <div id="map-picker" style={{ width: "100%", height: "100%" }} />
               </div>
               <label className="full-field"><span>Deskripsi *</span><textarea name="description" required rows={4} minLength={10} placeholder="Apa yang terjadi? Sertakan patokan lokasi dan dampaknya..." /></label>
+              <label className="full-field report-image-field"><span>Foto pendukung <small>(opsional, maksimal 5 foto)</small></span><input name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={selectImages} disabled={images.length >= 5} /><small>Tambahkan satu-satu atau beberapa sekaligus · JPG, PNG, atau WebP · maksimal 5 MB per foto</small>{imagePreviews.length > 0 && <div className="report-image-previews">{imagePreviews.map((url, index) => <span key={url} className="report-image-preview"><img src={url} alt={`Pratinjau foto ${index + 1}`} /><button type="button" onClick={() => removeImage(index)} aria-label={`Hapus foto ${index + 1}`}>×</button></span>)}</div>}</label>
               <label className="full-field"><span>Nomor WhatsApp *</span><input name="contactPhone" required type="tel" inputMode="tel" placeholder="08xx xxxx xxxx" /></label>
               {error && <p className="form-disclaimer" role="alert" style={{ color: "#c94e40" }}>{error}</p>}
               <button className="send-report" disabled={sending} type="submit">{sending ? "Mengirim laporan…" : "Kirim suara saya"} <PaperPlaneTiltIcon size={20} weight="fill" /></button>

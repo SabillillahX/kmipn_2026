@@ -13,7 +13,8 @@ export async function POST() {
         id: reports.id,
         description: reports.description,
         category: reports.category,
-        location: reports.location
+        location: reports.location,
+        districtId: reports.districtId
       })
       .from(reports)
       .where(isNull(reports.ticketId));
@@ -64,6 +65,7 @@ export async function POST() {
             category: firstReport.category,
             centroidLocation: { x: cluster.master_longitude, y: cluster.master_latitude },
             status: "TERVALIDASI",
+            districtId: firstReport.districtId,
             reportCount: cluster.member_ids.length
           })
           .returning({ id: tickets.id });

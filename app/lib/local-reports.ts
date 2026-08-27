@@ -9,7 +9,7 @@ export type LocalReport = {
   id: string; code: string; category: string; severity: string; description: string;
   contactPhone: string; latitude: number; longitude: number; priority: string;
   status: ReportStatus; assignedTo: string | null; createdAt: string;
-  resolvedAt: string | null; history: ReportHistory[];
+  resolvedAt: string | null; history: ReportHistory[]; imageUrls: string[];
 };
 
 const dataPath = path.join(process.cwd(), "data", "local-reports.json");
@@ -31,8 +31,17 @@ export async function createLocalReport(input: Pick<LocalReport, "category" | "s
   const reports = await getLocalReports();
   const now = new Date().toISOString();
   const code = `SPLIK-${new Date().getFullYear().toString().slice(-2)}${String(Date.now()).slice(-6)}`;
-  const report: LocalReport = { id: randomUUID(), code, ...input, status: "baru", assignedTo: null, createdAt: now, resolvedAt: null, history: [{ status: "baru", note: "Laporan diterima oleh sistem SPLIK.", at: now, actor: "Sistem" }] };
+  const report: LocalReport = { id: randomUUID(), code, ...input, status: "baru", assignedTo: null, createdAt: now, resolvedAt: null, imageUrls: [], history: [{ status: "baru", note: "Laporan diterima oleh sistem SPLIK.", at: now, actor: "Sistem" }] };
   reports.unshift(report); await saveLocalReports(reports); return report;
+}
+
+export async function addLocalReportImages(code: string, imageUrls: string[]) {
+  const reports = await getLocalReports();
+  const index = reports.findIndex((report) => report.code.toUpperCase() === code.toUpperCase());
+  if (index < 0) return null;
+  reports[index] = { ...reports[index], imageUrls: [...(reports[index].imageUrls ?? []), ...imageUrls] };
+  await saveLocalReports(reports);
+  return reports[index];
 }
 
 export async function updateLocalReport(code: string, input: { status: ReportStatus; note: string; assignedTo?: string }) {
