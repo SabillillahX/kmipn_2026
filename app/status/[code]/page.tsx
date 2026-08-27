@@ -6,6 +6,18 @@ import { tickets, reports, auditLogs, users } from "@/src/database/schema";
 import { eq, sql, desc } from "drizzle-orm";
 import StatusMapClient from "./status-map-client";
 
+type SubReport = {
+  id: string;
+  code: string;
+  reporterPhone: string;
+  description: string;
+  damageLevel: number;
+  createdAt: string;
+  latitude: number;
+  longitude: number;
+  address?: string;
+};
+
 const labels: Record<string, string> = {
   baru: "Laporan diterima",
   diverifikasi: "Sudah diverifikasi",
@@ -64,6 +76,7 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
     history: Array<{ status: string; note: string; at: string; actor: string }>;
     reportCodes: string[];
     isClustered: boolean;
+    reports?: SubReport[];
   } | null = null;
 
   if (code.toUpperCase().startsWith("TK-")) {
@@ -136,6 +149,28 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
       const description = ticketReports.length > 1 ? `${firstDesc} (berdasarkan ${ticketReports.length} aduan)` : firstDesc;
       const reportCodes = ticketReports.map(r => `REP-${r.id.slice(0, 6).toUpperCase()}`);
 
+      const subReports: SubReport[] = await Promise.all(
+        ticketReports.map(async (r) => {
+          const rLat = (r.location as { y: number } | null)?.y ?? 0;
+          const rLng = (r.location as { x: number } | null)?.x ?? 0;
+          const rAddr = await getAddress(rLat, rLng);
+          const maskedPhone = r.reporterPhone.length > 7
+            ? `${r.reporterPhone.slice(0, 4)}****${r.reporterPhone.slice(-3)}`
+            : r.reporterPhone;
+          return {
+            id: r.id,
+            code: `REP-${r.id.slice(0, 6).toUpperCase()}`,
+            reporterPhone: maskedPhone,
+            description: r.description,
+            damageLevel: r.damageLevel,
+            createdAt: r.createdAt.toISOString(),
+            latitude: rLat,
+            longitude: rLng,
+            address: rAddr
+          };
+        })
+      );
+
       report = {
         code: `TK-${ticket.id.slice(0, 6).toUpperCase()}`,
         category: catLabelMap[ticket.category] ?? ticket.category,
@@ -148,7 +183,8 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
         createdAt: ticket.createdAt.toISOString(),
         history,
         reportCodes,
-        isClustered: true
+        isClustered: true,
+        reports: subReports
       };
     }
   } else if (code.toUpperCase().startsWith("REP-")) {
@@ -217,6 +253,28 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
 
           const reportCodes = ticketReports.map(r => `REP-${r.id.slice(0, 6).toUpperCase()}`);
 
+          const subReports: SubReport[] = await Promise.all(
+            ticketReports.map(async (r) => {
+              const rLat = (r.location as { y: number } | null)?.y ?? 0;
+              const rLng = (r.location as { x: number } | null)?.x ?? 0;
+              const rAddr = await getAddress(rLat, rLng);
+              const maskedPhone = r.reporterPhone.length > 7
+                ? `${r.reporterPhone.slice(0, 4)}****${r.reporterPhone.slice(-3)}`
+                : r.reporterPhone;
+              return {
+                id: r.id,
+                code: `REP-${r.id.slice(0, 6).toUpperCase()}`,
+                reporterPhone: maskedPhone,
+                description: r.description,
+                damageLevel: r.damageLevel,
+                createdAt: r.createdAt.toISOString(),
+                latitude: rLat,
+                longitude: rLng,
+                address: rAddr
+              };
+            })
+          );
+
           report = {
             code: `TK-${ticket.id.slice(0, 6).toUpperCase()}`,
             category: catLabelMap[ticket.category] ?? ticket.category,
@@ -229,7 +287,8 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
             createdAt: ticket.createdAt.toISOString(),
             history,
             reportCodes,
-            isClustered: true
+            isClustered: true,
+            reports: subReports
           };
         }
       } else {
@@ -301,16 +360,6 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
           {report.isClustered ? (
             <div style={{ marginTop: "16px", fontSize: "12px", color: "#607480", lineHeight: "1.6" }}>
               <div>Kode Klaster: <b>{report.code}</b></div>
-              {report.reportCodes.length === 1 ? (
-                <div>Kode Aduan: <b>{report.reportCodes[0]}</b></div>
-              ) : (
-                <div style={{ marginTop: "4px" }}>
-                  Daftar Kode Aduan:
-                  <ul style={{ margin: "4px 0 0 16px", padding: 0, listStyle: "disc" }}>
-                    {report.reportCodes.map((c) => <li key={c}><b>{c}</b></li>)}
-                  </ul>
-                </div>
-              )}
             </div>
           ) : (
             <div style={{ marginTop: "16px", fontSize: "12px", color: "#607480" }}>
@@ -361,6 +410,45 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
           <StatusMapClient latitude={report.latitude} longitude={report.longitude} priority={report.priority} />
         </section>
       </section>
+      {report.reports && report.reports.length >= 1 && (
+        <section className={styles.clusterSection}>
+          <p>Daftar Aduan Dalam Klaster Ini</p>
+          <div className={styles.clusterTableWrapper}>
+            <table className={styles.clusterTable}>
+              <thead>
+                <tr>
+                  <th>Kode</th>
+                  <th>Tanggal</th>
+                  <th>Tingkat Kerusakan</th>
+                  <th>Deskripsi Aduan</th>
+                  <th>Lokasi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.reports.map((item) => (
+                  <tr key={item.id}>
+                    <td><code>{item.code}</code></td>
+                    <td>
+                      {new Intl.DateTimeFormat("id-ID", { dateStyle: "long", timeStyle: "short" }).format(new Date(item.createdAt))}
+                    </td>
+                    <td>
+                      <span className={`${styles.badge} ${item.damageLevel === 3 ? styles.badgeHigh : item.damageLevel === 2 ? styles.badgeMedium : styles.badgeLow}`}>
+                        {item.damageLevel === 3 ? "Tinggi" : item.damageLevel === 2 ? "Sedang" : "Rendah"}
+                      </span>
+                    </td>
+                    <td>{item.description}</td>
+                    <td>
+                      <a target="_blank" rel="noreferrer" href={`https://www.openstreetmap.org/?mlat=${item.latitude}&mlon=${item.longitude}#map=18/${item.latitude}/${item.longitude}`}>
+                        {item.address || `${item.latitude.toFixed(5)}, ${item.longitude.toFixed(5)}`} ↗
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

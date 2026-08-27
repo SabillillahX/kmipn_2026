@@ -45,4 +45,94 @@
   .statusMapSection {
     grid-column: auto;
   }
+  .clusterSection {
+    grid-column: auto;
+  }
 }
+
+.clusterSection {
+  grid-column: 1 / -1;
+  border: 1px solid #dde4e1;
+  border-radius: 7px;
+  background: #fff;
+  padding: 27px;
+  margin-top: 16px;
+}
+
+.clusterSection > p {
+  margin: 0 0 16px;
+  color: #2979ff;
+  font-family: var(--font-civic), serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.clusterTableWrapper {
+  overflow-x: auto;
+  border: 1px solid #dde4e1;
+  border-radius: 6px;
+}
+
+.clusterTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12px;
+}
+
+.clusterTable th {
+  background: #f8faf9;
+  border-bottom: 1px solid #dde4e1;
+  padding: 12px 16px;
+  font-weight: 700;
+  color: #536672;
+}
+
+.clusterTable td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f3f2;
+  color: #102a45;
+  vertical-align: top;
+}
+
+.clusterTable tr:last-child td {
+  border-bottom: 0;
+}
+
+.clusterTable code {
+  font-weight: 700;
+  color: #2979ff;
+}
+
+.clusterTable a {
+  color: #2979ff;
+  font-weight: 700;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.badgeLow {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.badgeMedium {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.badgeHigh {
+  background: #ffebee;
+  color: #c62828;
+}
+

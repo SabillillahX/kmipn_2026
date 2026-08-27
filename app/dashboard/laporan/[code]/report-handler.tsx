@@ -1,7 +1,50 @@
 "use client";
-import { FormEvent, useEffect, useState, useMemo } from "react";
+import { FormEvent, useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import styles from "./report-handler.module.css";
+import ClusterMapClient from "./cluster-map";
+
+async function fetchAddress(lat: number, lon: number): Promise<string> {
+  try {
+    const res = await fetch(`/api/admin/geocode?lat=${lat}&lon=${lon}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.address) return data.address;
+    }
+  } catch {}
+  return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+}
+
+const geocodeQueue: Array<{
+  lat: number;
+  lon: number;
+  resolve: (val: string) => void;
+}> = [];
+let isGeocodeQueueRunning = false;
+
+async function runGeocodeQueue() {
+  if (isGeocodeQueueRunning || geocodeQueue.length === 0) return;
+  isGeocodeQueueRunning = true;
+  const task = geocodeQueue[0];
+  try {
+    const res = await fetchAddress(task.lat, task.lon);
+    task.resolve(res);
+  } catch {
+    task.resolve(`${task.lat.toFixed(5)}, ${task.lon.toFixed(5)}`);
+  }
+  geocodeQueue.shift();
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  isGeocodeQueueRunning = false;
+  runGeocodeQueue();
+}
+
+function enqueueGeocode(lat: number, lon: number): Promise<string> {
+  return new Promise((resolve) => {
+    geocodeQueue.push({ lat, lon, resolve });
+    runGeocodeQueue();
+  });
+}
+
 
 type History = { status: string; note: string; at: string; actor: string };
 type SubReport = {
@@ -38,6 +81,28 @@ export default function ReportHandler({ code }: { code: string }) {
   const [clusterSearch, setClusterSearch] = useState("");
   const [clusterCurrentPage, setClusterCurrentPage] = useState(1);
   const clusterItemsPerPage = 10;
+  const [addresses, setAddresses] = useState<Record<string, string>>({});
+  const resolvedRef = useRef<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!report) return;
+    const coords: Array<{ lat: number; lon: number }> = [];
+    coords.push({ lat: report.latitude, lon: report.longitude });
+    if (report.reports) {
+      report.reports.forEach((r) => {
+        coords.push({ lat: r.latitude, lon: r.longitude });
+      });
+    }
+
+    coords.forEach(async ({ lat, lon }) => {
+      const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
+      if (resolvedRef.current[key]) return;
+      resolvedRef.current[key] = true;
+      const addr = await enqueueGeocode(lat, lon);
+      setAddresses((prev) => ({ ...prev, [key]: addr }));
+    });
+  }, [report]);
+
 
   useEffect(() => {
     fetch(`/api/admin/reports/${encodeURIComponent(code)}`)
@@ -95,9 +160,10 @@ export default function ReportHandler({ code }: { code: string }) {
 
   async function update(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const currentTarget = event.currentTarget;
     setPending(true);
     setError("");
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(currentTarget);
     const response = await fetch(`/api/admin/reports/${encodeURIComponent(code)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -112,7 +178,7 @@ export default function ReportHandler({ code }: { code: string }) {
     if (!response.ok) setError(data.error);
     else {
       setReport(data);
-      (event.currentTarget.elements.namedItem("note") as HTMLTextAreaElement).value = "";
+      (currentTarget.elements.namedItem("note") as HTMLTextAreaElement).value = "";
     }
   }
 
@@ -153,7 +219,7 @@ export default function ReportHandler({ code }: { code: string }) {
               <dt>Lokasi</dt>
               <dd>
                 <a target="_blank" rel="noreferrer" href={`https://www.openstreetmap.org/?mlat=${report.latitude}&mlon=${report.longitude}#map=18/${report.latitude}/${report.longitude}`}>
-                  {report.latitude.toFixed(5)}, {report.longitude.toFixed(5)} ↗
+                  {addresses[`${report.latitude.toFixed(5)},${report.longitude.toFixed(5)}`] || `${report.latitude.toFixed(5)}, ${report.longitude.toFixed(5)}`} ↗
                 </a>
               </dd>
             </div>
@@ -184,7 +250,7 @@ export default function ReportHandler({ code }: { code: string }) {
             <button disabled={pending}>{pending ? "Menyimpan…" : "Simpan pembaruan"}</button>
           </form>
         </article>
-        {report.reports && report.reports.length > 1 && (
+        {report.reports && report.reports.length >= 1 && (
           <article className={styles.cluster}>
             <div className={styles.clusterHeader}>
               <p>DAFTAR ADUAN DALAM KLASTER INI</p>
@@ -198,6 +264,7 @@ export default function ReportHandler({ code }: { code: string }) {
                 />
               </div>
             </div>
+            <ClusterMapClient reports={report.reports} />
             <div className={styles.clusterTableWrapper}>
               <table className={styles.clusterTable}>
                 <thead>
@@ -225,7 +292,7 @@ export default function ReportHandler({ code }: { code: string }) {
                         <td>{item.description}</td>
                         <td>
                           <a target="_blank" rel="noreferrer" href={`https://www.openstreetmap.org/?mlat=${item.latitude}&mlon=${item.longitude}#map=18/${item.latitude}/${item.longitude}`}>
-                            {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)} ↗
+                            {addresses[`${item.latitude.toFixed(5)},${item.longitude.toFixed(5)}`] || `${item.latitude.toFixed(5)}, ${item.longitude.toFixed(5)}`} ↗
                           </a>
                         </td>
                       </tr>
