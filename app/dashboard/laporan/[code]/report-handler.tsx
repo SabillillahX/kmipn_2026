@@ -6,7 +6,7 @@ import styles from "./report-handler.module.css";
 import ClusterMapClient from "./cluster-map";
 import SuratTugasModal from "@/src/components/surat-tugas-modal";
 import ConfirmModal from "@/src/components/confirm-modal";
-import { FileText, Image as ImageIcon, Play, CheckCircle } from "@phosphor-icons/react";
+import { FileText, Image as ImageIcon, Play, CheckCircle, WhatsappLogo } from "@phosphor-icons/react";
 
 async function fetchAddress(lat: number, lon: number): Promise<string> {
   try {
@@ -90,6 +90,7 @@ export default function ReportHandler({ code, userRole, userId }: { code: string
   const [opds, setOpds] = useState<{id: string, name: string}[]>([]);
   const [isSuratTugasOpen, setIsSuratTugasOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [broadcasting, setBroadcasting] = useState(false);
   const clusterItemsPerPage = 10;
   const [addresses, setAddresses] = useState<Record<string, string>>({});
   const resolvedRef = useRef<Record<string, boolean>>({});
@@ -357,13 +358,71 @@ export default function ReportHandler({ code, userRole, userId }: { code: string
 
   const displayedStart = filteredClusterReports.length > 0 ? (clusterCurrentPage - 1) * clusterItemsPerPage + 1 : 0;
   const displayedEnd = Math.min(clusterCurrentPage * clusterItemsPerPage, filteredClusterReports.length);
+
+  const handleBroadcastWhatsApp = async () => {
+    const cleanPhone = report.contactPhone.startsWith("0") ? `62${report.contactPhone.slice(1)}` : report.contactPhone.replace(/\D/g, "");
+    const trackingLink = `http://localhost:3000/status/${encodeURIComponent(code)}`;
+    const statusMsg = `🏛️ *SISTEM SPLIK KECAMATAN SUKAMAJU* 🏛️\n\nYth. Warga Sukamaju,\nUpdate status terkini laporan Anda (*${code}*):\nSTATUS: *${report.status.toUpperCase()}*\nPelaksana: *${report.assignedTo || "OPD Pelaksana"}*\n\nLacak detail & bukti foto di:\n🔗 ${trackingLink}`;
+    const directWaUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(statusMsg)}`;
+
+    showConfirm(
+      "Broadcast WhatsApp Status",
+      `Kirim notifikasi update status laporan (${report.status}) ke nomor pelapor ${report.contactPhone}?`,
+      async () => {
+        setBroadcasting(true);
+        try {
+          const res = await fetch("/api/admin/whatsapp/broadcast", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: code }),
+          });
+          const data = await res.json();
+          setBroadcasting(false);
+          if (!res.ok) throw new Error(data.error || "Gagal melakukan broadcast.");
+
+          showAlert(
+            "Broadcast Berhasil!",
+            `Notifikasi WA otomatis telah dipicu ke ${data.count} nomor pelapor. Klik 'Mengerti' untuk menguji direct chat WhatsApp Web ke ${report.contactPhone}.`,
+            "success",
+            () => window.open(directWaUrl, "_blank")
+          );
+        } catch (err: any) {
+          setBroadcasting(false);
+          showAlert("Gagal Broadcast", err.message, "error");
+        }
+      }
+    );
+  };
+
   const showSuratTugasButton = report.assignedTo || report.status === "diverifikasi" || report.status === "diproses" || report.status === "selesai";
 
   return (
     <main className={styles.page}>
       <header>
         <Link href="/dashboard">← Kembali ke dashboard</Link>
-        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <button
+            type="button"
+            onClick={handleBroadcastWhatsApp}
+            disabled={broadcasting}
+            style={{
+              background: "#25D366",
+              color: "#fff",
+              border: "none",
+              padding: "8px 14px",
+              borderRadius: "6px",
+              fontWeight: 700,
+              fontSize: "12px",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              boxShadow: "0 2px 8px rgba(37,211,102,0.25)"
+            }}
+          >
+            <WhatsappLogo size={18} weight="fill" /> {broadcasting ? "Mengirim WA…" : "Broadcast WA Status"}
+          </button>
+
           {showSuratTugasButton && (
             <button
               type="button"
@@ -408,7 +467,25 @@ export default function ReportHandler({ code, userRole, userId }: { code: string
             </div>
             <div>
               <dt>Kontak warga</dt>
-              <dd>{report.contactPhone}</dd>
+              <dd style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span>{report.contactPhone}</span>
+                <a
+                  href={`https://wa.me/${report.contactPhone.startsWith("0") ? `62${report.contactPhone.slice(1)}` : report.contactPhone.replace(/\D/g, "")}?text=${encodeURIComponent(`Halo, ini dari pihak Kecamatan Sukamaju mengenai laporan ${report.code}.`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    color: "#25D366",
+                    fontWeight: 700,
+                    fontSize: "11px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    textDecoration: "none"
+                  }}
+                >
+                  <WhatsappLogo size={14} weight="fill" /> Kirim WA ↗
+                </a>
+              </dd>
             </div>
             <div>
               <dt>Lokasi</dt>

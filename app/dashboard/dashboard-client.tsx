@@ -23,6 +23,8 @@ import {
 import splikEmblem from "../../public/brand/splik-emblem.png";
 import styles from "./dashboard.module.css";
 import ConfirmModal from "@/src/components/confirm-modal";
+import ScoringConfigModal from "@/src/components/scoring-config-modal";
+import { Sliders } from "@phosphor-icons/react";
 
 const cases = [
   { id: "SPL-2408", title: "Lampu jalan mati", area: "Jl. Melati Raya · RW 05", time: "8 menit lalu", type: "Penerangan", priority: "Tinggi", tone: "coral" },
@@ -47,6 +49,7 @@ export default function DashboardClient() {
   const [period, setPeriod] = useState("7 hari terakhir");
   const [data, setData] = useState<DashboardData | null>(null);
   const [testing, setTesting] = useState(false);
+  const [scoringModalOpen, setScoringModalOpen] = useState(false);
   useEffect(() => { fetch("/api/dashboard").then((response) => response.ok ? response.json() : null).then(setData).catch(() => setData(null)); }, []);
   const metrics = data?.metrics ?? { total: 0, actionable: 0, inProgress: 0, resolved: 0 };
   const reportRows = data?.reports ?? [];
@@ -130,6 +133,13 @@ export default function DashboardClient() {
           <div style={{ display: "flex", gap: "10px" }}>
             <button
               className={styles.primaryButton}
+              style={{ backgroundColor: "#2563eb" }}
+              onClick={() => setScoringModalOpen(true)}
+            >
+              <Sliders size={18} weight="bold" /> Kalibrasi Skor Prioritas
+            </button>
+            <button
+              className={styles.primaryButton}
               style={{ backgroundColor: "#d97706" }}
               onClick={handleTestSpam}
               disabled={testing}
@@ -172,6 +182,14 @@ export default function DashboardClient() {
         title={modalConfig.title}
         description={modalConfig.description}
         type={modalConfig.type}
+      />
+      <ScoringConfigModal
+        isOpen={scoringModalOpen}
+        onClose={() => setScoringModalOpen(false)}
+        onSaved={async () => {
+          const res = await fetch("/api/dashboard");
+          if (res.ok) setData(await res.json());
+        }}
       />
     </main>
   );

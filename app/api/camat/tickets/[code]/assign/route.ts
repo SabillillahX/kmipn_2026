@@ -2,6 +2,7 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireStaff } from "@/app/lib/dal";
 import { getLocalReport, updateLocalReport } from "@/app/lib/local-reports";
+import { sendWhatsAppNotification } from "@/app/lib/whatsapp";
 import { db } from "@/src/database";
 import { auditLogs, notifications, reports, tickets, userDistricts, users } from "@/src/database/schema";
 
@@ -137,6 +138,25 @@ export async function POST(request: Request, context: { params: Promise<{ code: 
         }
       });
 
+      // Send Automated WhatsApp Notification to Reporter(s)
+      const ticketReports = await db
+        .select({ phone: reports.reporterPhone })
+        .from(reports)
+        .where(eq(reports.ticketId, ticketRecord.id));
+
+      const displayCode = `TK-${ticketRecord.id.slice(0, 6).toUpperCase()}`;
+      for (const rep of ticketReports) {
+        if (rep.phone) {
+          await sendWhatsAppNotification({
+            to: rep.phone,
+            type: "DISPOSISI",
+            code: displayCode,
+            assignedTo: opdName,
+            note: note,
+          });
+        }
+      }
+
       return NextResponse.json({ ok: true, status: "TERVALIDASI", assignedTo: opdName });
     }
   } catch (err) {
@@ -151,6 +171,17 @@ export async function POST(request: Request, context: { params: Promise<{ code: 
       assignedTo: opdName,
       note: `Disposisi ke ${opdName}: ${note}`,
     });
+
+    if (localReport.contactPhone) {
+      await sendWhatsAppNotification({
+        to: localReport.contactPhone,
+        type: "DISPOSISI",
+        code: code,
+        assignedTo: opdName,
+        note: note,
+      });
+    }
+
     return NextResponse.json({ ok: true, status: "diverifikasi", assignedTo: opdName });
   }
 

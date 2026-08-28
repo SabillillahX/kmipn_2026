@@ -167,6 +167,25 @@ export const reportImages = pgTable('report_images', {
     reportImageReportIdx: index('report_images_report_idx').on(table.reportId),
 }));
 
+export const districtScoringConfigs = pgTable('district_scoring_configs', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    districtId: uuid('district_id').references(() => districts.id, { onDelete: 'cascade' }).notNull().unique(),
+    alpha: real('alpha').default(0.6).notNull(),
+    beta: real('beta').default(0.4).notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const districtSocioData = pgTable('district_socio_data', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    districtId: uuid('district_id').references(() => districts.id, { onDelete: 'cascade' }).notNull().unique(),
+    povertyRate: real('poverty_rate').default(0.15).notNull(),
+    vulnerabilityIndex: real('vulnerability_index').default(50.0).notNull(),
+    isDisasterProne: boolean('is_disaster_prone').default(false).notNull(),
+    dtksRecipientDensity: real('dtks_recipient_density').default(20.0).notNull(),
+    populationDensity: real('population_density').default(1000.0).notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 export const ticketsRelations = relations(tickets, ({ many }) => ({
     reports: many(reports),
     auditLogs: many(auditLogs),

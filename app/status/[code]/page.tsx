@@ -5,6 +5,7 @@ import { db } from "@/src/database";
 import { tickets, reports, auditLogs, users, ticketProofImages } from "@/src/database/schema";
 import { eq, sql, desc } from "drizzle-orm";
 import StatusMapClient from "./status-map-client";
+import RealtimeWhatsAppListener from "@/src/components/realtime-whatsapp-listener";
 import { CheckCircle, Image as ImageIcon } from "@phosphor-icons/react/dist/ssr";
 
 type SubReport = {
@@ -391,6 +392,7 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
 
   return (
     <main className={styles.detailPage}>
+      <RealtimeWhatsAppListener code={report.code} />
       <header>
         <Link href="/status">← Lacak kode lain</Link>
         <Link href="/">Portal SPLIK</Link>

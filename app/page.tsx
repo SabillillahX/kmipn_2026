@@ -8,6 +8,7 @@ import SiteHeader from "../src/components/site-header";
 import ScrollProgress from "../src/components/scroll-progress";
 import AmbientCursor from "../src/components/ambient-cursor";
 import SectionPortal from "../src/components/section-portal";
+import WhatsAppWidget from "../src/components/whatsapp-widget";
 
 export default function Home() {
   return (
@@ -22,6 +23,7 @@ export default function Home() {
       <ProcessSection />
       <ReportExperience />
       <SiteFooter />
+      <WhatsAppWidget />
     </main>
   );
 }

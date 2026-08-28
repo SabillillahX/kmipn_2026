@@ -1,7 +1,8 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireStaff } from "@/app/lib/dal";
-import { updateLocalReport } from "@/app/lib/local-reports";
+import { getLocalReport, updateLocalReport } from "@/app/lib/local-reports";
+import { sendWhatsAppNotification } from "@/app/lib/whatsapp";
 import { db } from "@/src/database";
 import { auditLogs, districts, notifications, ticketProofImages, tickets, userDistricts, users, reports, zoneLocks } from "@/src/database/schema";
 
@@ -51,7 +52,6 @@ export async function PATCH(request: Request, context: { params: Promise<{ code:
     }
 
     if (ticketRecord) {
-      // Ensure districtId exists on ticket if null
       let districtId = ticketRecord.districtId;
       if (!districtId) {
         const [defaultDist] = await db.select({ id: districts.id }).from(districts).limit(1);
@@ -61,12 +61,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ code:
         }
       }
 
-      // Link userDistrict access for OPD
       if (districtId && user.id !== "local-admin") {
         await db.insert(userDistricts).values({ userId: user.id, districtId }).onConflictDoNothing();
       }
-
-      const point = (ticketRecord.centroidLocation as { x: number; y: number }) || { x: 110.42918, y: -7.0658 };
 
       if (status === "diproses") {
         await db.update(tickets).set({ status: "DIPROSES_OPD", assignedToRole: "OPD", assignedToUserId: user.id, updatedAt: new Date() }).where(eq(tickets.id, ticketRecord.id));
@@ -77,6 +74,25 @@ export async function PATCH(request: Request, context: { params: Promise<{ code:
         await db.update(tickets).set({ status: "SELESAI", updatedAt: new Date() }).where(eq(tickets.id, ticketRecord.id));
         if (user.id !== "local-admin") {
           await db.insert(auditLogs).values({ ticketId: ticketRecord.id, userId: user.id, action: "SELESAI", reason: note });
+        }
+      }
+
+      // Automated WhatsApp status notification to reporter(s)
+      const ticketReports = await db
+        .select({ phone: reports.reporterPhone })
+        .from(reports)
+        .where(eq(reports.ticketId, ticketRecord.id));
+
+      const displayCode = `TK-${ticketRecord.id.slice(0, 6).toUpperCase()}`;
+      for (const rep of ticketReports) {
+        if (rep.phone) {
+          await sendWhatsAppNotification({
+            to: rep.phone,
+            type: status === "diproses" ? "DIPROSES" : "SELESAI",
+            code: displayCode,
+            assignedTo: user.name,
+            note: note,
+          });
         }
       }
 
@@ -91,10 +107,19 @@ export async function PATCH(request: Request, context: { params: Promise<{ code:
   const updated = await updateLocalReport(code, {
     status: uiStatus,
     note: note,
-    assignedTo: "Tim Lapangan OPD"
+    assignedTo: user.name || "Tim Lapangan OPD"
   });
 
   if (updated) {
+    if (updated.contactPhone) {
+      await sendWhatsAppNotification({
+        to: updated.contactPhone,
+        type: status === "diproses" ? "DIPROSES" : "SELESAI",
+        code: code,
+        assignedTo: user.name || "Tim Lapangan OPD",
+        note: note,
+      });
+    }
     return NextResponse.json({ ok: true, status: uiStatus });
   }
 

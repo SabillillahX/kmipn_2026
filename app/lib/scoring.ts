@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/src/database";
-import { tickets, reports } from "@/src/database/schema";
+import { tickets, reports, districtScoringConfigs } from "@/src/database/schema";
+import { getSocioDemographicScoreByDistrict } from "@/app/lib/services/socio-data";
 
 export interface ScoringFactors {
   alpha?: number;
@@ -42,15 +43,16 @@ export function calculateTechnicalImpactScore(
   const ageInHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
   const chronicityScore = Math.min(10, ageInHours * 0.5);
 
+  const essentialKeywords = ["puskesmas", "sekolah", "rumah sakit", "rs", "pasar", "fasilitas", "akses utama"];
+  const mentionsEssentialService = reportsList.some((r) => {
+    const desc = r.description.toLowerCase();
+    return essentialKeywords.some((kw) => desc.includes(kw));
+  });
+
   const isBlocked = reportsList.some((r) => r.aiIsBlocked);
-  const accessibilityScore = isBlocked ? 10 : 0;
+  const accessibilityScore = (isBlocked || mentionsEssentialService) ? 10 : 0;
 
   return Math.min(100, volumeScore + riskScore + facilityImpactScore + chronicityScore + accessibilityScore);
-}
-
-export function getSocioDemographicScore(x: number, y: number): number {
-  const value = Math.abs(Math.sin(x) * Math.cos(y) * 100);
-  return Math.min(100, Math.max(10, Math.round(value)));
 }
 
 export async function updateTicketUrgencyScore(
@@ -58,16 +60,14 @@ export async function updateTicketUrgencyScore(
   config?: ScoringFactors,
   tx?: any
 ): Promise<number | null> {
-  const alpha = config?.alpha ?? 0.6;
-  const beta = config?.beta ?? 0.4;
   const client = tx || db;
 
   const ticketRows = await client
     .select({
       ticketId: tickets.id,
+      districtId: tickets.districtId,
       reportCount: tickets.reportCount,
       createdAt: tickets.createdAt,
-      centroidLocation: tickets.centroidLocation,
       reportId: reports.id,
       reportDamageLevel: reports.damageLevel,
       reportDescription: reports.description,
@@ -84,6 +84,33 @@ export async function updateTicketUrgencyScore(
   }
 
   const firstRow = ticketRows[0];
+  let alpha = config?.alpha;
+  let beta = config?.beta;
+
+  if (alpha === undefined || beta === undefined) {
+    if (firstRow.districtId) {
+      const configRows = await client
+        .select()
+        .from(districtScoringConfigs)
+        .where(eq(districtScoringConfigs.districtId, firstRow.districtId))
+        .limit(1);
+
+      if (configRows.length > 0) {
+        alpha = configRows[0].alpha;
+        beta = configRows[0].beta;
+      }
+    }
+  }
+
+  alpha = alpha ?? 0.6;
+  beta = beta ?? 0.4;
+
+  const totalWeight = alpha + beta;
+  if (totalWeight !== 0) {
+    alpha = alpha / totalWeight;
+    beta = beta / totalWeight;
+  }
+
   const reportsList = ticketRows
     .filter((row: any) => row.reportId !== null)
     .map((row: any) => ({
@@ -100,10 +127,7 @@ export async function updateTicketUrgencyScore(
     firstRow.createdAt
   );
 
-  const location = firstRow.centroidLocation as { x: number; y: number } | null;
-  const x = location?.x ?? 0;
-  const y = location?.y ?? 0;
-  const sb = getSocioDemographicScore(x, y);
+  const sb = await getSocioDemographicScoreByDistrict(firstRow.districtId, client);
 
   const scoreUrgency = alpha * sa + beta * sb;
   const roundedScore = Math.min(100, Math.max(0, Math.round(scoreUrgency * 100) / 100));
