@@ -157,20 +157,21 @@ export default function ReportExperience() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!coordinates) { setError("Pilih lokasi kejadian terlebih dahulu."); return; }
+    if (!images.length) { setError("Foto pendukung kejadian wajib diunggah (minimal 1 foto)."); return; }
     setError(""); setSending(true);
     const form = new FormData(event.currentTarget);
     const response = await fetch("/api/reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category: form.get("category"), severity: form.get("severity"), description: form.get("description"), contactPhone: form.get("contactPhone"), ...coordinates }) });
     const data = await response.json();
+    if (!response.ok) { setSending(false); setError(data.error ?? "Laporan belum dapat dikirim."); return; }
+    
+    const imageData = new FormData();
+    images.forEach((image) => imageData.append("images", image));
+    const upload = await fetch(`/api/reports/${encodeURIComponent(data.code)}/attachments`, { method: "POST", body: imageData });
     setSending(false);
-    if (!response.ok) { setError(data.error ?? "Laporan belum dapat dikirim."); return; }
-    if (images.length) {
-      const imageData = new FormData();
-      images.forEach((image) => imageData.append("images", image));
-      const upload = await fetch(`/api/reports/${encodeURIComponent(data.code)}/attachments`, { method: "POST", body: imageData });
-      if (!upload.ok) {
-        const uploadError = await upload.json().catch(() => ({}));
-        setError(`Laporan sudah terkirim, tetapi foto gagal disimpan: ${uploadError.error ?? "coba unggah kembali dari detail laporan."}`);
-      }
+    if (!upload.ok) {
+      const uploadError = await upload.json().catch(() => ({}));
+      setError(`Laporan sudah terbuat, namun foto gagal disimpan: ${uploadError.error ?? "coba unggah kembali."}`);
+      return;
     }
     setReference(data.code); setSubmitted(true);
   }
@@ -224,7 +225,7 @@ export default function ReportExperience() {
                 <div id="map-picker" style={{ width: "100%", height: "100%" }} />
               </div>
               <label className="full-field"><span>Deskripsi *</span><textarea name="description" required rows={4} minLength={10} placeholder="Apa yang terjadi? Sertakan patokan lokasi dan dampaknya..." /></label>
-              <label className="full-field report-image-field"><span>Foto pendukung <small>(opsional, maksimal 5 foto)</small></span><input name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={selectImages} disabled={images.length >= 5} /><small>Tambahkan satu-satu atau beberapa sekaligus · JPG, PNG, atau WebP · maksimal 5 MB per foto</small>{imagePreviews.length > 0 && <div className="report-image-previews">{imagePreviews.map((url, index) => <span key={url} className="report-image-preview"><img src={url} alt={`Pratinjau foto ${index + 1}`} /><button type="button" onClick={() => removeImage(index)} aria-label={`Hapus foto ${index + 1}`}>×</button></span>)}</div>}</label>
+              <label className="full-field report-image-field"><span>Foto pendukung kejadian * <small>(maksimal 5 foto)</small></span><input name="images" type="file" accept="image/*,image/heic,image/heif" multiple onChange={selectImages} disabled={images.length >= 5} /><small>Mendukung foto kamera Android & iPhone (JPG, PNG, WEBP, HEIC, HEIF, dll) · maksimal 10 MB per foto</small>{imagePreviews.length > 0 && <div className="report-image-previews">{imagePreviews.map((url, index) => <span key={url} className="report-image-preview"><img src={url} alt={`Pratinjau foto ${index + 1}`} /><button type="button" onClick={() => removeImage(index)} aria-label={`Hapus foto ${index + 1}`}>×</button></span>)}</div>}</label>
               <label className="full-field"><span>Nomor WhatsApp *</span><input name="contactPhone" required type="tel" inputMode="tel" placeholder="08xx xxxx xxxx" /></label>
               {error && <p className="form-disclaimer" role="alert" style={{ color: "#c94e40" }}>{error}</p>}
               <button className="send-report" disabled={sending} type="submit">{sending ? "Mengirim laporan…" : "Kirim suara saya"} <PaperPlaneTiltIcon size={20} weight="fill" /></button>

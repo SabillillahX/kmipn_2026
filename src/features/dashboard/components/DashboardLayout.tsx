@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import styles from "@/src/styles/dashboard.module.css";
+import ConfirmModal from "@/src/components/confirm-modal";
 
 interface DashboardLayoutProps {
   page: "eksekutif" | "opd";
@@ -295,8 +296,45 @@ function EksekutifContent() {
 
 function OpdContent() {
   const [zones, setZones] = useState<Array<{ code: string; district: string; radiusMeters: number; createdAt: string; latitude: number; longitude: number }>>([]);
-  const [liveData, setLiveData] = useState<{ tickets: Array<{ code: string; category: string; status: string; latitude: number; longitude: number }>; notifications: Array<{ id: string; title: string; message: string; createdAt: string; readAt: string | null }> }>({ tickets: [], notifications: [] });
+  const [liveData, setLiveData] = useState<{ tickets: Array<{ code: string; category: string; status: string; latitude: number; longitude: number; updatedAt?: string }>; notifications: Array<{ id: string; title: string; message: string; createdAt: string; readAt: string | null }> }>({ tickets: [], notifications: [] });
   const [zonesError, setZonesError] = useState("");
+  const [progressing, setProgressing] = useState<Record<string, boolean>>({});
+
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description?: string;
+    type?: "confirm" | "success" | "error" | "warning" | "info";
+    onConfirm?: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+  });
+
+  async function handleProgress(code: string) {
+    if (progressing[code]) return;
+    setProgressing(prev => ({ ...prev, [code]: true }));
+    try {
+      const response = await fetch(`/api/opd/tickets/${encodeURIComponent(code)}/progress`, { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Gagal memperbarui status.");
+      setModalConfig({
+        isOpen: true,
+        title: "Status Diperbarui",
+        description: "Tiket berhasil diproses dan zona lock telah dibuat!",
+        type: "success",
+        onConfirm: () => window.location.reload()
+      });
+    } catch (err: any) {
+      setModalConfig({
+        isOpen: true,
+        title: "Gagal Memperbarui Status",
+        description: err.message,
+        type: "error"
+      });
+      setProgressing(prev => ({ ...prev, [code]: false }));
+    }
+  }
 
   useEffect(() => {
     fetch("/api/opd/zones")
@@ -336,165 +374,80 @@ function OpdContent() {
       </div>
 
       <div className={styles.queueList}>
-        <Card className="overflow-hidden">
-          <CardContent className="p-0">
-            <div className={styles.ticketCard}>
-              <div className={styles.ticketContent}>
-            <div className={styles.ticketHeader}>
-              <div>
-                <h3 className={styles.ticketTitle}>
-                  Jalan Berlubang Parah di Ring Road Utara
-                </h3>
-                <div className={styles.ticketMeta}>
-                  <Badge variant="secondary">#TK-2045</Badge>
-                  <Badge variant="destructive">
-                    Tingkat: Berat
-                  </Badge>
-                  <span className="text-sm text-slate-500">Dilaporkan 2 jam lalu</span>
-                </div>
-              </div>
-            </div>
+        {liveData.tickets.length > 0 ? (
+          liveData.tickets.map((ticket) => (
+            <Card className="overflow-hidden mb-4" key={ticket.code}>
+              <CardContent className="p-0">
+                <div className={styles.ticketCard}>
+                  <div className={styles.ticketContent}>
+                    <div className={styles.ticketHeader}>
+                      <div>
+                        <h3 className={styles.ticketTitle}>
+                          Laporan Kategori: {ticket.category}
+                        </h3>
+                        <div className={styles.ticketMeta}>
+                          <Badge variant="secondary">#{ticket.code}</Badge>
+                          <Badge variant={ticket.status === 'DIPROSES_OPD' ? "default" : "outline"} className={ticket.status === 'DIPROSES_OPD' ? "bg-blue-600 hover:bg-blue-700" : ""}>
+                            {ticket.status}
+                          </Badge>
+                          <span className="text-sm text-slate-500">
+                            {ticket.updatedAt ? new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(ticket.updatedAt)) : "Baru saja"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
-            <div className={styles.detailGrid}>
-              <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>
-                  <MapPinLineIcon size={16} /> Koordinat Presisi
-                </div>
-                <div className={`${styles.detailValue} ${styles.coords}`}>
-                  -6.19283, 106.82391
-                </div>
-              </div>
-              <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>
-                  <ClockIcon size={16} /> SLA Penanganan
-                </div>
-                <div
-                  className={styles.detailValue}
-                  style={{ fontWeight: 600 }}
-                >
-                  12 Jam Tersisa
-                </div>
-              </div>
-            </div>
+                    <div className={styles.detailGrid} style={{ marginBottom: "1rem" }}>
+                      <div className={styles.detailItem}>
+                        <div className={styles.detailLabel}>
+                          <MapPinLineIcon size={16} /> Koordinat Presisi
+                        </div>
+                        <div className={`${styles.detailValue} ${styles.coords}`}>
+                          {ticket.latitude.toFixed(5)}, {ticket.longitude.toFixed(5)}
+                        </div>
+                      </div>
+                    </div>
 
-            <div className={styles.historyBox}>
-              <div className={styles.historyTitle}>
-                <VisorIcon size={16} /> Riwayat Tiket Berdekatan (Radius 500m)
-              </div>
-              <div className={styles.historyItem}>
-                <span>TK-1980 - Saluran Air Mampet (102m)</span>
-                <span style={{ fontWeight: 600 }}>
-                  Selesai
-                </span>
-              </div>
-              <div className={styles.historyItem}>
-                <span>TK-1945 - Jalan Ambles (320m)</span>
-                <span style={{ fontWeight: 600 }}>
-                  Selesai
-                </span>
-              </div>
-            </div>
-
-            <div className={styles.ticketActions}>
-              <Button>
-                <NavigationArrowIcon size={18} /> Arahkan Tim Lapangan
-              </Button>
-              <Button variant="outline">
-                <CheckCircleIcon size={18} /> Tandai Sedang Inspeksi
-              </Button>
-            </div>
-          </div>
-
-          <div className={styles.ticketMedia}>
-            <img
-              src="https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&q=80&w=400&h=400"
-              alt="Bukti Masalah"
-              className={styles.photo}
-            />
-            <div className={styles.photoLabel}>
-              <CameraIcon size={14} /> Bukti Lampiran Warga
-            </div>
-          </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden border-slate-200">
-          <CardContent className="p-0">
-            <div
-              className={styles.ticketCard}
-            >
-              <div className={styles.ticketContent}>
-            <div className={styles.ticketHeader}>
-              <div>
-                <h3 className={styles.ticketTitle}>
-                  Trotoar Amblas Dekat Galian
-                </h3>
-                <div className={styles.ticketMeta}>
-                  <Badge variant="secondary">#TK-2041</Badge>
-                  <Badge variant="default" className="bg-orange-500 hover:bg-orange-600">
-                    Tingkat: Sedang
-                  </Badge>
-                  <span className="text-sm text-slate-500">Dilaporkan 5 jam lalu</span>
+                    <div className={styles.ticketActions}>
+                      <Button onClick={() => window.location.assign(`/dashboard/laporan/${ticket.code}`)} variant="outline">
+                        <NavigationArrowIcon size={18} /> Lihat Detail
+                      </Button>
+                      
+                      {ticket.status === "TERVALIDASI" && (
+                        <Button 
+                          onClick={() => handleProgress(ticket.code)}
+                          disabled={progressing[ticket.code]}
+                        >
+                          <CheckCircleIcon size={18} /> {progressing[ticket.code] ? "Memproses..." : "Tandai Sedang Inspeksi (Lock Zone)"}
+                        </Button>
+                      )}
+                      
+                      {ticket.status === "DIPROSES_OPD" && (
+                        <Button onClick={() => window.location.assign(`/dashboard/laporan/${ticket.code}`)} className="bg-emerald-600 hover:bg-emerald-700">
+                          <CheckCircleIcon size={18} /> Unggah Bukti Penyelesaian
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            <div className={styles.lockAlert}>
-              <LockKeyIcon size={20} weight="duotone" />
-              <span>
-                <strong>Status Terkunci:</strong> Penanganan ditunda karena
-                wilayah ini masih dalam pengerjaan oleh{" "}
-                <strong>Dinas Pekerjaan Umum (SLA: 24 Jam)</strong>.
-              </span>
-            </div>
-
-            <div className={styles.detailGrid} style={{ marginBottom: "1rem" }}>
-              <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>
-                  <MapPinLineIcon size={16} /> Koordinat Presisi
-                </div>
-                <div className={`${styles.detailValue} ${styles.coords}`}>
-                  -6.19500, 106.82100
-                </div>
-              </div>
-              <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>
-                  <ClockIcon size={16} /> SLA Penanganan
-                </div>
-                <div
-                  className={styles.detailValue}
-                  style={{ fontWeight: 600 }}
-                >
-                  Menunggu Lock Flag
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.ticketActions}>
-              <Button
-                variant="outline"
-                disabled
-              >
-                <LockKeyIcon size={18} /> Terkunci (Pending)
-              </Button>
-            </div>
-          </div>
-
-          <div className={styles.ticketMedia}>
-            <img
-              src="https://images.unsplash.com/photo-1584984647264-7e579da2b49f?auto=format&fit=crop&q=80&w=400&h=400"
-              alt="Bukti Masalah"
-              className={styles.photo}
-            />
-            <div className={styles.photoLabel}>
-              <CameraIcon size={14} /> Bukti Lampiran Warga
-            </div>
-          </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <p style={{ color: "#64748b", textAlign: "center", padding: "2rem" }}>
+            Tidak ada tiket di antrean Anda.
+          </p>
+        )}
       </div>
+
+      <ConfirmModal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig((p) => ({ ...p, isOpen: false }))}
+        onConfirm={modalConfig.onConfirm}
+        title={modalConfig.title}
+        description={modalConfig.description}
+        type={modalConfig.type}
+      />
     </>
   );
 }

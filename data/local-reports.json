@@ -38,8 +38,8 @@
     "latitude": -6.39462,
     "longitude": 106.84573,
     "priority": "sedang",
-    "status": "diverifikasi",
-    "assignedTo": "Regu Kebersihan A",
+    "status": "diproses",
+    "assignedTo": "Tim Lapangan OPD",
     "createdAt": "2026-08-14T03:35:00.000Z",
     "resolvedAt": null,
     "history": [
@@ -53,6 +53,12 @@
         "status": "diverifikasi",
         "note": "Foto dan lokasi telah diverifikasi.",
         "at": "2026-08-14T05:10:00.000Z",
+        "actor": "Admin SPLIK"
+      },
+      {
+        "status": "diproses",
+        "note": "Memulai inspeksi dan penanganan teknis lapangan oleh tim OPD.",
+        "at": "2026-08-28T00:57:40.704Z",
         "actor": "Admin SPLIK"
       }
     ]

@@ -109,20 +109,37 @@
 .images dt {
   color: #849197;
   font-size: 10px;
+  margin-bottom: 8px;
 }
 
 .images > div {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-top: 9px;
+}
+
+.images button {
+  width: 130px;
+  height: 130px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #d7e0dd;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: #f8fafc;
+}
+
+.images button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
 }
 
 .images img {
   display: block;
   width: 100%;
-  aspect-ratio: 1;
-  border: 1px solid #d7e0dd;
+  height: 100%;
+  border-radius: 7px;
   object-fit: cover;
 }
 

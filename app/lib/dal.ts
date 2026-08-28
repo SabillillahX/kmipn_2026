@@ -16,9 +16,8 @@ export const requireStaff = cache(async () => {
   return user;
 });
 
-/** Global operational pages remain restricted to the system administrator. */
 export const requireAdmin = cache(async () => {
   const user = await requireStaff();
-  if (user.role !== "ADMIN") redirect("/dashboard/opd");
+  if (user.role === "OPD") redirect("/dashboard/opd");
   return user;
 });

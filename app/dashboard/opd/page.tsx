@@ -1,4 +1,4 @@
-import { DashboardLayout } from '@/src/features/dashboard/components/DashboardLayout';
+import OpdClient from './opd-client';
 
 export const metadata = {
   title: 'Dashboard OPD - Distrac',
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function OpdDashboardPage() {
-  return <DashboardLayout page="opd" />;
+  return <OpdClient />;
 }

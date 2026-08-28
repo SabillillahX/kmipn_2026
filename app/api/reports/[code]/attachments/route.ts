@@ -10,8 +10,30 @@ import { reportImages, reports, tickets } from "@/src/database/schema";
 export const runtime = "nodejs";
 
 const maxFiles = 5;
-const maxSizeBytes = 5 * 1024 * 1024;
-const extensions: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+const maxSizeBytes = 10 * 1024 * 1024; // 10 MB per photo to support high-res mobile cameras
+
+const extensions: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/heic": "heic",
+  "image/heif": "heif",
+  "image/heic-sequence": "heic",
+  "image/heif-sequence": "heif",
+  "image/gif": "gif",
+  "image/bmp": "bmp",
+  "image/tiff": "tiff",
+};
+
+function getFileExtension(file: File): string {
+  if (extensions[file.type]) return extensions[file.type];
+  if (file.name.includes(".")) {
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (ext && ext.length <= 4) return ext;
+  }
+  return "jpg";
+}
 
 export async function GET(_request: Request, context: { params: Promise<{ code: string }> }) {
   const { code } = await context.params;
@@ -37,9 +59,9 @@ export async function POST(request: Request, context: { params: Promise<{ code: 
   const { code } = await context.params;
   const form = await request.formData().catch(() => null);
   const files = form?.getAll("images").filter((value): value is File => value instanceof File && value.size > 0) ?? [];
-  if (!files.length) return NextResponse.json({ error: "Pilih setidaknya satu foto." }, { status: 400 });
+  if (!files.length) return NextResponse.json({ error: "Pilih setidaknya satu foto kejadian." }, { status: 400 });
   if (files.length > maxFiles) return NextResponse.json({ error: `Maksimal ${maxFiles} foto per laporan.` }, { status: 400 });
-  if (files.some((file) => !extensions[file.type] || file.size > maxSizeBytes)) return NextResponse.json({ error: "Gunakan foto JPG, PNG, atau WebP dengan ukuran maksimal 5 MB per foto." }, { status: 400 });
+  if (files.some((file) => file.size > maxSizeBytes)) return NextResponse.json({ error: "Ukuran foto maksimal 10 MB per foto." }, { status: 400 });
 
   let reportId: string | null = null;
   try {
@@ -57,7 +79,8 @@ export async function POST(request: Request, context: { params: Promise<{ code: 
   const saved: Array<{ url: string; mimeType: string; sizeBytes: number; diskPath: string }> = [];
   try {
     for (const file of files) {
-      const name = `${randomUUID()}.${extensions[file.type]}`;
+      const ext = getFileExtension(file);
+      const name = `${randomUUID()}.${ext}`;
       const diskPath = path.join(uploadDir, name);
       await writeFile(diskPath, Buffer.from(await file.arrayBuffer()));
       saved.push({ url: `/uploads/reports/${name}`, mimeType: file.type, sizeBytes: file.size, diskPath });

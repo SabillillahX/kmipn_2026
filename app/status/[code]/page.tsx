@@ -2,9 +2,10 @@ import Link from "next/link";
 import { getLocalReport } from "@/app/lib/local-reports";
 import styles from "../status.module.css";
 import { db } from "@/src/database";
-import { tickets, reports, auditLogs, users } from "@/src/database/schema";
+import { tickets, reports, auditLogs, users, ticketProofImages } from "@/src/database/schema";
 import { eq, sql, desc } from "drizzle-orm";
 import StatusMapClient from "./status-map-client";
+import { CheckCircle, Image as ImageIcon } from "@phosphor-icons/react/dist/ssr";
 
 type SubReport = {
   id: string;
@@ -16,6 +17,12 @@ type SubReport = {
   latitude: number;
   longitude: number;
   address?: string;
+};
+
+type ProofImage = {
+  id: string;
+  url: string;
+  createdAt: string;
 };
 
 const labels: Record<string, string> = {
@@ -77,6 +84,7 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
     reportCodes: string[];
     isClustered: boolean;
     reports?: SubReport[];
+    proofImages: ProofImage[];
   } | null = null;
 
   if (code.toUpperCase().startsWith("TK-")) {
@@ -106,6 +114,16 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
         .innerJoin(users, eq(auditLogs.userId, users.id))
         .where(eq(auditLogs.ticketId, ticket.id))
         .orderBy(desc(auditLogs.createdAt));
+
+      // Fetch OPD Proof Images from Database
+      const proofs = await db
+        .select({
+          id: ticketProofImages.id,
+          url: ticketProofImages.url,
+          createdAt: ticketProofImages.createdAt,
+        })
+        .from(ticketProofImages)
+        .where(eq(ticketProofImages.ticketId, ticket.id));
 
       const firstReport = ticketReports[0];
       const lat = (ticket.centroidLocation as any)?.y ?? (firstReport?.location as any)?.y ?? 0;
@@ -184,7 +202,12 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
         history,
         reportCodes,
         isClustered: true,
-        reports: subReports
+        reports: subReports,
+        proofImages: proofs.map((p) => ({
+          id: p.id,
+          url: p.url,
+          createdAt: p.createdAt.toISOString(),
+        })),
       };
     }
   } else if (code.toUpperCase().startsWith("REP-")) {
@@ -213,6 +236,15 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
             .innerJoin(users, eq(auditLogs.userId, users.id))
             .where(eq(auditLogs.ticketId, ticket.id))
             .orderBy(desc(auditLogs.createdAt));
+
+          const proofs = await db
+            .select({
+              id: ticketProofImages.id,
+              url: ticketProofImages.url,
+              createdAt: ticketProofImages.createdAt,
+            })
+            .from(ticketProofImages)
+            .where(eq(ticketProofImages.ticketId, ticket.id));
 
           const lat = (ticket.centroidLocation as any)?.y ?? (dbReport.location as any)?.y ?? 0;
           const lng = (ticket.centroidLocation as any)?.x ?? (dbReport.location as any)?.x ?? 0;
@@ -288,7 +320,12 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
             history,
             reportCodes,
             isClustered: true,
-            reports: subReports
+            reports: subReports,
+            proofImages: proofs.map((p) => ({
+              id: p.id,
+              url: p.url,
+              createdAt: p.createdAt.toISOString(),
+            })),
           };
         }
       } else {
@@ -316,7 +353,8 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
             }
           ],
           reportCodes,
-          isClustered: false
+          isClustered: false,
+          proofImages: []
         };
       }
     }
@@ -337,7 +375,12 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
         createdAt: localReport.createdAt,
         history: localReport.history,
         reportCodes: [localReport.code],
-        isClustered: false
+        isClustered: false,
+        proofImages: (localReport.imageUrls ?? []).map((url, index) => ({
+          id: String(index),
+          url,
+          createdAt: localReport.createdAt,
+        })),
       };
     }
   }
@@ -369,6 +412,7 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
         </div>
         <strong data-status={report.status}>{labels[report.status]}</strong>
       </section>
+
       <section className={styles.statusGrid}>
         <article className={styles.summary}>
           <p>RINGKASAN LAPORAN</p>
@@ -392,6 +436,7 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
             </div>
           </dl>
         </article>
+
         <article className={styles.timeline}>
           <p>RIWAYAT PENANGANAN</p>
           {[...report.history].reverse().map((event, index) => (
@@ -405,11 +450,78 @@ export default async function ReportStatusPage({ params }: PageProps<"/status/[c
             </div>
           ))}
         </article>
+
+        {/* OPD Proof Images Section */}
+        {report.proofImages && report.proofImages.length > 0 && (
+          <article style={{ gridColumn: "1 / -1", background: "#ffffff", borderRadius: "16px", padding: "24px", boxShadow: "0 4px 20px rgba(0,0,0,0.05)", border: "1px solid #e2e8f0" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+              <div style={{ background: "#f0fdf4", color: "#166534", padding: "8px", borderRadius: "8px", display: "flex" }}>
+                <CheckCircle size={22} weight="fill" />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 750, color: "#0f172a" }}>
+                  Bukti Hasil Penanganan Lapangan OPD ({report.proofImages.length} Foto)
+                </h3>
+                <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>
+                  Dokumentasi foto penyelesaian resmi yang diunggah oleh tim teknis instansi pelaksana.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "14px" }}>
+              {report.proofImages.map((img, idx) => (
+                <a
+                  key={img.id || idx}
+                  href={img.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "block",
+                    borderRadius: "12px",
+                    overflow: "hidden",
+                    border: "1px solid #cbd5e1",
+                    position: "relative",
+                    height: "150px",
+                    background: "#f8fafc",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                    transition: "transform 0.2s ease",
+                  }}
+                >
+                  <img
+                    src={img.url}
+                    alt={`Bukti Lapangan ${idx + 1}`}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
+                      padding: "8px",
+                      color: "#fff",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <ImageIcon size={14} /> Bukti Foto #{idx + 1}
+                  </div>
+                </a>
+              ))}
+            </div>
+          </article>
+        )}
+
         <section className={styles.statusMapSection}>
           <p>LOKASI KEJADIAN</p>
           <StatusMapClient latitude={report.latitude} longitude={report.longitude} priority={report.priority} />
         </section>
       </section>
+
       {report.reports && report.reports.length >= 1 && (
         <section className={styles.clusterSection}>
           <p>Daftar Aduan Dalam Klaster Ini</p>

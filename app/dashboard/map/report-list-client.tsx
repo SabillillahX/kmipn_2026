@@ -118,6 +118,12 @@ export default function ReportListClient({ points }: { points: Point[] }) {
                   <td className={styles.descCell}>{item.description}</td>
                 </tr>
               ))
+            ) : points.length === 0 ? (
+              <tr>
+                <td colSpan={5} className={styles.emptyCell} style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>
+                  Sedang tidak ada laporan masuk.
+                </td>
+              </tr>
             ) : (
               <tr>
                 <td colSpan={5} className={styles.emptyCell}>

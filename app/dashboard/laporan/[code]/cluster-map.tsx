@@ -15,7 +15,7 @@ type SubReport = {
   longitude: number;
 };
 
-type LeafletMap = { fitBounds(bounds: unknown, options: { padding: [number, number]; maxZoom: number }): void; remove(): void };
+type LeafletMap = { fitBounds(bounds: unknown, options: { padding: [number, number]; maxZoom: number }): void; remove(): void; setView(center: [number, number], zoom: number): void; };
 type LeafletMarker = { addTo(map: LeafletMap): LeafletMarker; bindPopup(content: HTMLElement): LeafletMarker };
 type LeafletApi = {
   map(element: HTMLElement, options: { zoomControl: boolean }): LeafletMap;

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/app/lib/dal";
+import { requireAdmin, requireStaff } from "@/app/lib/dal";
 import { getLocalReport, ReportStatus, updateLocalReport } from "@/app/lib/local-reports";
 import { db } from "@/src/database";
 import { tickets, reports, auditLogs, users } from "@/src/database/schema";
@@ -15,7 +15,7 @@ const catLabelMap: Record<string, string> = {
 };
 
 export async function GET(_request: Request, context: { params: Promise<{ code: string }> }) {
-  await requireAdmin();
+  const user = await requireStaff();
   const { code } = await context.params;
 
   if (code.toUpperCase().startsWith("TK-")) {
@@ -28,6 +28,10 @@ export async function GET(_request: Request, context: { params: Promise<{ code: 
 
     if (ticketList.length === 0) return NextResponse.json({ error: "Laporan tidak ditemukan." }, { status: 404 });
     const ticket = ticketList[0];
+
+    if (user.role === "OPD" && ticket.assignedToUserId !== user.id) {
+      return NextResponse.json({ error: "Tiket tidak ditemukan atau di luar penugasan Anda." }, { status: 403 });
+    }
 
     const ticketReports = await db
       .select()
@@ -98,6 +102,7 @@ export async function GET(_request: Request, context: { params: Promise<{ code: 
       longitude: lng,
       priority,
       status,
+      districtId: ticket.districtId,
       assignedTo: ticket.assignedToRole === "OPD" ? "Petugas OPD" : null,
       createdAt: ticket.createdAt.toISOString(),
       history,
@@ -128,6 +133,9 @@ export async function GET(_request: Request, context: { params: Promise<{ code: 
     if (report.ticketId) {
       const [ticket] = await db.select().from(tickets).where(eq(tickets.id, report.ticketId)).limit(1);
       if (ticket) {
+        if (user.role === "OPD" && ticket.assignedToUserId !== user.id) {
+          return NextResponse.json({ error: "Tiket tidak ditemukan atau di luar penugasan Anda." }, { status: 403 });
+        }
         const ticketReports = await db.select().from(reports).where(eq(reports.ticketId, ticket.id));
         const logs = await db
           .select({
@@ -189,6 +197,7 @@ export async function GET(_request: Request, context: { params: Promise<{ code: 
           longitude: lng,
           priority,
           status,
+          districtId: ticket.districtId,
           assignedTo: ticket.assignedToRole === "OPD" ? "Petugas OPD" : null,
           createdAt: ticket.createdAt.toISOString(),
           history,
@@ -204,6 +213,10 @@ export async function GET(_request: Request, context: { params: Promise<{ code: 
           })),
         });
       }
+    }
+
+    if (user.role === "OPD") {
+      return NextResponse.json({ error: "Laporan belum dikelompokkan ke dalam tiket penugasan Anda." }, { status: 403 });
     }
 
     const [newTicket] = await db
@@ -232,6 +245,7 @@ export async function GET(_request: Request, context: { params: Promise<{ code: 
       longitude: lng,
       priority: "rendah",
       status: "baru",
+      districtId: newTicket.districtId,
       assignedTo: null,
       createdAt: newTicket.createdAt.toISOString(),
       history: [

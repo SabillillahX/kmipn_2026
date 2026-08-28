@@ -1,0 +1,351 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.dialog {
+  background: #ffffff;
+  width: 100%;
+  max-width: 820px;
+  max-height: 90vh;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.topActions {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topActionsTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btnGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.printBtn {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.printBtn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.closeBtn {
+  background: #334155;
+  color: #cbd5e1;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.closeBtn:hover {
+  background: #475569;
+  color: #ffffff;
+}
+
+.body {
+  padding: 2.5rem 3rem;
+  overflow-y: auto;
+  color: #1e293b;
+  font-family: 'Times New Roman', Times, serif, sans-serif;
+  line-height: 1.6;
+}
+
+/* Kop Surat */
+.kop {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  border-bottom: 3px double #0f172a;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.kopLogo {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.kopText {
+  flex: 1;
+}
+
+.kopText h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.kopText h2 {
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin: 2px 0;
+  text-transform: uppercase;
+  color: #0f172a;
+}
+
+.kopText p {
+  font-size: 0.82rem;
+  font-family: Arial, sans-serif;
+  color: #475569;
+  margin: 0;
+}
+
+/* Document Header */
+.docTitle {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.docTitle h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-transform: uppercase;
+  margin: 0;
+  letter-spacing: 0.05em;
+}
+
+.docTitle p {
+  font-size: 0.95rem;
+  font-family: Arial, sans-serif;
+  margin: 4px 0 0 0;
+  color: #334155;
+}
+
+/* Document Content */
+.sectionText {
+  margin-bottom: 1.25rem;
+  text-align: justify;
+  font-size: 1rem;
+}
+
+.tableDetails {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0 1.5rem 0;
+  font-size: 0.95rem;
+}
+
+.tableDetails td {
+  padding: 6px 10px;
+  vertical-align: top;
+}
+
+.tableDetails td:first-child {
+  width: 170px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tableDetails td:nth-child(2) {
+  width: 15px;
+}
+
+.noteBox {
+  background: #f8fafc;
+  border-left: 4px solid #2563eb;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-family: Arial, sans-serif;
+  font-size: 0.9rem;
+  color: #1e293b;
+  margin-top: 4px;
+}
+
+/* Signature & Stamp Section */
+.footerSign {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 3rem;
+  padding-top: 1rem;
+}
+
+.qrVerification {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f1f5f9;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-family: Arial, sans-serif;
+}
+
+.qrBox {
+  width: 58px;
+  height: 58px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qrInfo {
+  font-size: 0.75rem;
+  color: #475569;
+}
+
+.qrInfo strong {
+  display: block;
+  color: #0f172a;
+  font-size: 0.8rem;
+}
+
+.signBox {
+  text-align: center;
+  position: relative;
+  width: 260px;
+}
+
+.signBox p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.stampWrapper {
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 8px 0;
+}
+
+.stempelBasah {
+  width: 105px;
+  height: 105px;
+  border: 3px double #1e40af;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #1e40af;
+  font-family: Arial, sans-serif;
+  font-weight: 800;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 6px;
+  transform: rotate(-12deg);
+  opacity: 0.85;
+  box-shadow: inset 0 0 0 2px #1e40af;
+  position: absolute;
+  left: 25px;
+}
+
+.stempelInner {
+  border-top: 1px solid #1e40af;
+  border-bottom: 1px solid #1e40af;
+  padding: 2px 0;
+  margin: 2px 0;
+  font-size: 0.62rem;
+  width: 100%;
+}
+
+.ttdDigital {
+  font-family: 'Brush Script MT', cursive, sans-serif;
+  font-size: 1.8rem;
+  color: #0f172a;
+  font-weight: bold;
+  transform: rotate(-3deg);
+  z-index: 2;
+  position: relative;
+}
+
+.signName {
+  font-weight: 800;
+  text-decoration: underline;
+  margin-top: 6px;
+  color: #0f172a;
+}
+
+.signNip {
+  font-size: 0.82rem;
+  font-family: Arial, sans-serif;
+  color: #475569;
+}
+
+@media print {
+  .overlay {
+    position: static;
+    background: none;
+    padding: 0;
+  }
+  .dialog {
+    box-shadow: none;
+    max-width: 100%;
+    max-height: none;
+    border-radius: 0;
+  }
+  .topActions {
+    display: none;
+  }
+  .body {
+    padding: 0;
+  }
+}

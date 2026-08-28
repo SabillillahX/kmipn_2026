@@ -1,8 +1,12 @@
 "use client";
+
 import { FormEvent, useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import styles from "./report-handler.module.css";
 import ClusterMapClient from "./cluster-map";
+import SuratTugasModal from "@/src/components/surat-tugas-modal";
+import ConfirmModal from "@/src/components/confirm-modal";
+import { FileText, Image as ImageIcon, Play, CheckCircle } from "@phosphor-icons/react";
 
 async function fetchAddress(lat: number, lon: number): Promise<string> {
   try {
@@ -45,7 +49,6 @@ function enqueueGeocode(lat: number, lon: number): Promise<string> {
   });
 }
 
-
 type History = { status: string; note: string; at: string; actor: string };
 type ReportImage = { id: string; reportId: string; url: string };
 type SubReport = {
@@ -72,10 +75,11 @@ type Report = {
   createdAt: string;
   history: History[];
   reports?: SubReport[];
+  districtId?: string;
 };
 const statusOptions = ["baru", "diverifikasi", "diproses", "selesai", "ditolak"];
 
-export default function ReportHandler({ code }: { code: string }) {
+export default function ReportHandler({ code, userRole, userId }: { code: string; userRole?: string; userId?: string }) {
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -83,6 +87,9 @@ export default function ReportHandler({ code }: { code: string }) {
   const [clusterCurrentPage, setClusterCurrentPage] = useState(1);
   const [images, setImages] = useState<ReportImage[]>([]);
   const [proofImages, setProofImages] = useState<ReportImage[]>([]);
+  const [opds, setOpds] = useState<{id: string, name: string}[]>([]);
+  const [isSuratTugasOpen, setIsSuratTugasOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const clusterItemsPerPage = 10;
   const [addresses, setAddresses] = useState<Record<string, string>>({});
   const resolvedRef = useRef<Record<string, boolean>>({});
@@ -106,20 +113,29 @@ export default function ReportHandler({ code }: { code: string }) {
     });
   }, [report]);
 
-
   useEffect(() => {
     fetch(`/api/admin/reports/${encodeURIComponent(code)}`)
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error);
         setReport(data);
+        if (userRole === "CAMAT" || userRole === "ADMIN") {
+          const query = data.districtId ? `?districtId=${data.districtId}` : "";
+          fetch(`/api/camat/opds${query}`)
+            .then(res => res.json())
+            .then(setOpds)
+            .catch(() => {});
+        }
       })
       .catch((reason) => setError(reason.message));
-  }, [code]);
+  }, [code, userRole]);
 
   useEffect(() => {
     if (!code.toUpperCase().startsWith("TK-")) return;
-    fetch(`/api/opd/tickets/${encodeURIComponent(code)}/proof`).then(async (response) => response.ok ? response.json() : Promise.reject()).then((data) => setProofImages(data.images ?? [])).catch(() => setProofImages([]));
+    fetch(`/api/opd/tickets/${encodeURIComponent(code)}/proof`)
+      .then(async (response) => response.ok ? response.json() : Promise.reject())
+      .then((data) => setProofImages(data.images ?? []))
+      .catch(() => setProofImages([]));
   }, [code]);
 
   useEffect(() => {
@@ -143,6 +159,11 @@ export default function ReportHandler({ code }: { code: string }) {
       return dateStr;
     }
   };
+
+  const disposisiLog = useMemo(() => {
+    if (!report?.history) return null;
+    return report.history.find((h) => h.note.toLowerCase().includes("disposisi") || h.status === "diproses" || h.status === "diverifikasi");
+  }, [report]);
 
   const filteredClusterReports = useMemo(() => {
     if (!report?.reports) return [];
@@ -197,18 +218,176 @@ export default function ReportHandler({ code }: { code: string }) {
     }
   }
 
+  // Custom UI Modal State
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description?: string;
+    type?: "confirm" | "success" | "error" | "warning" | "info";
+    onConfirm?: () => void | Promise<void>;
+    confirmText?: string;
+    cancelText?: string;
+  }>({
+    isOpen: false,
+    title: "",
+  });
+
+  const showAlert = (title: string, description?: string, type: "confirm" | "success" | "error" | "warning" | "info" = "info", onConfirm?: () => void) => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      description,
+      type,
+      onConfirm: onConfirm ? () => { setModalConfig(p => ({ ...p, isOpen: false })); onConfirm(); } : () => setModalConfig(p => ({ ...p, isOpen: false }))
+    });
+  };
+
+  const showConfirm = (title: string, description: string, onConfirm: () => void | Promise<void>) => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      description,
+      onConfirm: async () => {
+        setModalConfig(p => ({ ...p, isOpen: false }));
+        await onConfirm();
+      },
+      confirmText: "Ya, Konfirmasi",
+      type: "confirm"
+    });
+  };
+
+  async function handleDisposisi(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const currentTarget = event.currentTarget;
+    setPending(true);
+    setError("");
+    const form = new FormData(currentTarget);
+    const response = await fetch(`/api/camat/tickets/${encodeURIComponent(code)}/assign`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        opdUserId: form.get("opdUserId"),
+        note: form.get("note")
+      })
+    });
+    const data = await response.json();
+    setPending(false);
+    if (!response.ok) setError(data.error);
+    else {
+      showAlert(
+        "Disposisi Berhasil",
+        "Tiket berhasil didisposisikan ke OPD dan Surat Tugas Resmi telah diterbitkan!",
+        "success",
+        () => window.location.reload()
+      );
+    }
+  }
+
+  async function handleStartProgress() {
+    showConfirm(
+      "Konfirmasi Penanganan Lapangan",
+      "Apakah Anda yakin ingin mengonfirmasi dan memulai penanganan teknis untuk tiket ini?",
+      async () => {
+        setPending(true);
+        setError("");
+        const response = await fetch(`/api/opd/tickets/${encodeURIComponent(code)}/progress`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: "diproses",
+            note: "Memulai inspeksi teknis dan pengerjaan lapangan oleh tim OPD."
+          })
+        });
+        const data = await response.json();
+        setPending(false);
+        if (!response.ok) setError(data.error);
+        else {
+          showAlert(
+            "Penanganan Dimulai",
+            "Status penanganan berhasil diperbarui menjadi 'Diproses OPD'!",
+            "success",
+            () => window.location.reload()
+          );
+        }
+      }
+    );
+  }
+
+  async function handleProofUpload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const currentTarget = event.currentTarget;
+    setPending(true);
+    setError("");
+    const form = new FormData(currentTarget);
+    const proofRes = await fetch(`/api/opd/tickets/${encodeURIComponent(code)}/proof`, {
+      method: "POST",
+      body: form
+    });
+    const proofData = await proofRes.json();
+    if (!proofRes.ok) {
+      setPending(false);
+      setError(proofData.error || "Gagal mengunggah foto bukti.");
+      return;
+    }
+
+    const note = (form.get("note") as string) || "Penanganan lapangan telah selesai dikerjakan.";
+    const progressRes = await fetch(`/api/opd/tickets/${encodeURIComponent(code)}/progress`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "selesai",
+        note: note
+      })
+    });
+    const progressData = await progressRes.json();
+    setPending(false);
+    if (!progressRes.ok) setError(progressData.error);
+    else {
+      showAlert(
+        "Penanganan Selesai",
+        "Bukti penyelesaian berhasil diunggah dan laporan resmi ditandai Selesai!",
+        "success",
+        () => window.location.reload()
+      );
+    }
+  }
+
   if (error && !report) return <main className={styles.page}><Link href="/dashboard">← Dashboard</Link><h1>{error}</h1></main>;
   if (!report) return <main className={styles.page}>Memuat laporan…</main>;
 
   const displayedStart = filteredClusterReports.length > 0 ? (clusterCurrentPage - 1) * clusterItemsPerPage + 1 : 0;
   const displayedEnd = Math.min(clusterCurrentPage * clusterItemsPerPage, filteredClusterReports.length);
+  const showSuratTugasButton = report.assignedTo || report.status === "diverifikasi" || report.status === "diproses" || report.status === "selesai";
 
   return (
     <main className={styles.page}>
       <header>
         <Link href="/dashboard">← Kembali ke dashboard</Link>
-        <Link href={`/status/${report.code}`} target="_blank">Lihat sebagai warga ↗</Link>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          {showSuratTugasButton && (
+            <button
+              type="button"
+              onClick={() => setIsSuratTugasOpen(true)}
+              style={{
+                background: "#0f172a",
+                color: "#fff",
+                border: "none",
+                padding: "8px 14px",
+                borderRadius: "6px",
+                fontWeight: 600,
+                fontSize: "12px",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              <FileText size={16} weight="bold" /> Surat Tugas Resmi
+            </button>
+          )}
+        </div>
       </header>
+      
       <section className={styles.head}>
         <div>
           <p>PENANGANAN LAPORAN</p>
@@ -217,8 +396,9 @@ export default function ReportHandler({ code }: { code: string }) {
         </div>
         <strong>{report.status}</strong>
       </section>
+
       <section className={styles.grid}>
-        <article className={styles.detail}>
+        <article className={styles.detail} style={report.status === "selesai" ? { gridColumn: "1 / -1" } : undefined}>
           <p>DETAIL KEJADIAN</p>
           <h2>{report.description}</h2>
           <dl>
@@ -239,34 +419,128 @@ export default function ReportHandler({ code }: { code: string }) {
               </dd>
             </div>
             <div>
-              <dt>Petugas</dt>
-              <dd>{report.assignedTo ?? "Belum ditugaskan"}</dd>
+              <dt>Petugas OPD Pelaksana</dt>
+              <dd>{report.assignedTo ?? "Belum didisposisikan"}</dd>
             </div>
           </dl>
-          {images.length > 0 && <div className={styles.images}><dt>Foto pendukung ({images.length})</dt><div>{images.map((image, index) => <a key={image.id} href={image.url} target="_blank" rel="noreferrer"><img src={image.url} alt={`Foto laporan ${index + 1}`} /></a>)}</div></div>}
-          {proofImages.length > 0 && <div className={styles.images}><dt>Bukti penyelesaian OPD ({proofImages.length})</dt><div>{proofImages.map((image, index) => <a key={image.id} href={image.url} target="_blank" rel="noreferrer"><img src={image.url} alt={`Bukti penyelesaian ${index + 1}`} /></a>)}</div></div>}
+
+          {images.length > 0 && (
+            <div className={styles.images}>
+              <dt>
+                <ImageIcon size={14} style={{ marginRight: 4, verticalAlign: "middle" }} />
+                Foto Lampiran Warga ({images.length})
+              </dt>
+              <div>
+                {images.map((image, index) => (
+                  <button
+                    type="button"
+                    key={image.id}
+                    onClick={() => setPreviewImage(image.url)}
+                    style={{ border: "none", padding: 0, background: "none", cursor: "pointer" }}
+                  >
+                    <img src={image.url} alt={`Foto laporan ${index + 1}`} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {proofImages.length > 0 && (
+            <div className={styles.images}>
+              <dt style={{ color: "#22c55e", fontWeight: 700 }}>
+                <CheckCircle size={14} style={{ marginRight: 4, verticalAlign: "middle" }} />
+                Bukti Penyelesaian Lapangan OPD ({proofImages.length})
+              </dt>
+              <div>
+                {proofImages.map((image, index) => (
+                  <button
+                    type="button"
+                    key={image.id}
+                    onClick={() => setPreviewImage(image.url)}
+                    style={{ border: "none", padding: 0, background: "none", cursor: "pointer" }}
+                  >
+                    <img src={image.url} alt={`Bukti penyelesaian ${index + 1}`} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </article>
-        <article className={styles.action}>
-          <p>PERBARUI PENANGANAN</p>
-          <form onSubmit={update}>
-            <label>
-              Status
-              <select name="status" defaultValue={report.status} key={report.status}>
-                {statusOptions.map((status) => <option key={status}>{status}</option>)}
-              </select>
-            </label>
-            <label>
-              Petugas / regu
-              <input name="assignedTo" defaultValue={report.assignedTo ?? ""} placeholder="Contoh: Tim Infrastruktur 01" />
-            </label>
-            <label>
-              Catatan untuk warga
-              <textarea name="note" required minLength={5} rows={4} placeholder="Jelaskan tindakan atau perkembangan terbaru…" />
-            </label>
-            {error && <div role="alert">{error}</div>}
-            <button disabled={pending}>{pending ? "Menyimpan…" : "Simpan pembaruan"}</button>
-          </form>
-        </article>
+
+        {report.status !== "selesai" && (
+          <article className={styles.action}>
+            <p>TINDAKAN PENANGANAN LAPANGAN</p>
+            
+            {(userRole === "CAMAT" || userRole === "ADMIN") && (
+              <form onSubmit={handleDisposisi}>
+                <label>
+                  Pilih Instansi OPD Pelaksana *
+                  <select name="opdUserId" required defaultValue="">
+                    <option value="" disabled>-- Pilih OPD Pelaksana --</option>
+                    {opds.map((opd) => <option key={opd.id} value={opd.id}>{opd.name}</option>)}
+                  </select>
+                </label>
+                <label>
+                  Catatan / Perintah Disposisi Resmi *
+                  <textarea name="note" required minLength={5} rows={4} placeholder="Tuliskan instruksi teknis penanganan untuk OPD pelaksana…" />
+                </label>
+                {error && <div role="alert">{error}</div>}
+                <button disabled={pending}>{pending ? "Menerbitkan Surat Tugas…" : "Disposisikan & Terbitkan Surat Tugas"}</button>
+              </form>
+            )}
+
+            {userRole === "OPD" && (report.status === "diverifikasi" || report.status === "baru") && (
+              <div style={{ padding: "16px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "#0f172a" }}>Langkah 1: Konfirmasi Memulai Pengerjaan</h4>
+                <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 16px 0" }}>
+                  Klik tombol di bawah untuk mengonfirmasi bahwa tim OPD sudah siap turun ke lapangan untuk menangani aduan ini.
+                </p>
+                {error && <div role="alert" style={{ marginBottom: "12px" }}>{error}</div>}
+                <button
+                  type="button"
+                  onClick={handleStartProgress}
+                  disabled={pending}
+                  style={{
+                    width: "100%",
+                    height: "44px",
+                    background: "#2563eb",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "6px",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px"
+                  }}
+                >
+                  <Play size={18} weight="fill" /> {pending ? "Memproses…" : "Mulai Penanganan Lapangan"}
+                </button>
+              </div>
+            )}
+
+            {userRole === "OPD" && report.status === "diproses" && (
+              <form onSubmit={handleProofUpload}>
+                <div style={{ padding: "12px", background: "#f0fdf4", borderRadius: "6px", border: "1px solid #bbf7d0", marginBottom: "12px", fontSize: "12px", color: "#166534" }}>
+                  <strong>Langkah 2: Unggah Hasil Pekerjaan Lapangan</strong>
+                </div>
+                <label>
+                  Foto Bukti Penyelesaian Lapangan (Wajib)
+                  <input type="file" name="images" accept="image/*,image/heic,image/heif" required multiple style={{marginTop: "8px", marginBottom: "16px"}} />
+                </label>
+                <label>
+                  Laporan Hasil Pekerjaan / Catatan Hasil
+                  <textarea name="note" required minLength={5} rows={4} placeholder="Jelaskan tindakan teknis yang telah dikerjakan oleh tim di lokasi…" />
+                </label>
+                {error && <div role="alert">{error}</div>}
+                <button disabled={pending}>{pending ? "Mengunggah Laporan…" : "Kirim Bukti Lapangan & Selesaikan"}</button>
+              </form>
+            )}
+          </article>
+        )}
+
         {report.reports && report.reports.length >= 1 && (
           <article className={styles.cluster}>
             <div className={styles.clusterHeader}>
@@ -349,8 +623,9 @@ export default function ReportHandler({ code }: { code: string }) {
             )}
           </article>
         )}
+
         <article className={styles.history}>
-          <p>RIWAYAT AKTIVITAS</p>
+          <p>RIWAYAT AKTIVITAS & AUDIT LOG</p>
           {[...report.history].reverse().map((item, index) => (
             <div key={`${item.at}-${index}`}>
               <i />
@@ -363,6 +638,51 @@ export default function ReportHandler({ code }: { code: string }) {
           ))}
         </article>
       </section>
+
+      {/* Surat Tugas Modal */}
+      <SuratTugasModal
+        isOpen={isSuratTugasOpen}
+        onClose={() => setIsSuratTugasOpen(false)}
+        report={report}
+        disposisiNote={disposisiLog?.note}
+        assignedOpdName={report.assignedTo ?? undefined}
+      />
+
+      {/* Image Lightbox Preview Modal */}
+      {previewImage && (
+        <div
+          onClick={() => setPreviewImage(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.85)",
+            backdropFilter: "blur(4px)",
+            zIndex: 99999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px"
+          }}
+        >
+          <img
+            src={previewImage}
+            alt="Pratinjau Foto Full"
+            style={{ maxWidth: "90vw", maxHeight: "90vh", borderRadius: "8px", objectFit: "contain" }}
+          />
+        </div>
+      )}
+
+      {/* Custom Confirmation / Alert Modal */}
+      <ConfirmModal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig((p) => ({ ...p, isOpen: false }))}
+        onConfirm={modalConfig.onConfirm}
+        title={modalConfig.title}
+        description={modalConfig.description}
+        type={modalConfig.type}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+      />
     </main>
   );
 }
