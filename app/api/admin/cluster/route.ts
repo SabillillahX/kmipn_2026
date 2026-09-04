@@ -23,12 +23,31 @@ export async function POST() {
       return NextResponse.json({ success: true, message: "No unclustered reports found." });
     }
 
-    const payload = unclustered.map((r) => ({
-      report_id: r.id,
-      text: r.description,
-      latitude: (r.location as any).y,
-      longitude: (r.location as any).x
-    }));
+    const payload = unclustered.map((r) => {
+      const loc = r.location as any;
+      let lat = -6.2088;
+      let lng = 106.8456;
+
+      if (loc && typeof loc === 'object') {
+        if (typeof loc.y === 'number' && typeof loc.x === 'number') {
+          lat = loc.y;
+          lng = loc.x;
+        } else if (Array.isArray(loc.coordinates) && loc.coordinates.length >= 2) {
+          lng = Number(loc.coordinates[0]);
+          lat = Number(loc.coordinates[1]);
+        } else if (Array.isArray(loc) && loc.length >= 2) {
+          lng = Number(loc[0]);
+          lat = Number(loc[1]);
+        }
+      }
+
+      return {
+        report_id: r.id,
+        text: r.description,
+        latitude: lat,
+        longitude: lng
+      };
+    });
 
     const response = await fetch(`${process.env.AI_SERVICE_URL}/api/v1/cluster-reports`, {
       method: "POST",

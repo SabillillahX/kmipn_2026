@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/app/lib/dal";
 import { db } from "@/src/database";
-import { reports } from "@/src/database/schema";
+import { reports, districts } from "@/src/database/schema";
 
 export async function POST() {
   try {
     await requireAdmin();
+
+    const [district] = await db.select({ id: districts.id }).from(districts).limit(1);
 
     const baseLng = 106.8456;
     const baseLat = -6.2088;
@@ -33,7 +35,8 @@ export async function POST() {
         category: "INFRASTRUKTUR" as const,
         damageLevel,
         description: desc,
-        location: { x: lng, y: lat }
+        location: { x: lng, y: lat },
+        districtId: district?.id
       });
     }
 
