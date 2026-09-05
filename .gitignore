@@ -57,3 +57,6 @@ __pycache__/
 *.onnx
 *.pkg
 *.spec
+
+# local model indobert cache
+ai-backend/.cache/*

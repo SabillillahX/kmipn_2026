@@ -1,0 +1,471 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import {
+  LockKeyIcon,
+  MapPinLineIcon,
+  MapPinIcon,
+  ClockIcon,
+  VisorIcon,
+  CameraIcon,
+  NavigationArrowIcon,
+  CheckCircleIcon,
+  ChartLineUpIcon,
+  TicketIcon,
+  FireIcon,
+  ShieldCheckIcon,
+  WarningCircleIcon,
+} from "@phosphor-icons/react";
+import { DashboardSidebar } from "./DashboardSidebar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import styles from "@/src/styles/dashboard.module.css";
+import ConfirmModal from "@/src/components/confirm-modal";
+
+interface DashboardLayoutProps {
+  page: "eksekutif" | "opd";
+}
+
+function EksekutifContent() {
+  const heatmapData = [
+    { lat: -6.19283, lng: 106.82391, intensity: 0.8 },
+    { lat: -6.19500, lng: 106.82100, intensity: 0.6 },
+    { lat: -6.18500, lng: 106.83500, intensity: 0.9 },
+    { lat: -6.21000, lng: 106.80000, intensity: 0.5 },
+    { lat: -6.17000, lng: 106.84000, intensity: 0.7 },
+    { lat: -6.22000, lng: 106.78000, intensity: 0.4 },
+    { lat: -6.23000, lng: 106.85000, intensity: 0.65 },
+    { lat: -6.16000, lng: 106.81000, intensity: 0.85 },
+    { lat: -6.19000, lng: 106.87000, intensity: 0.55 },
+    { lat: -6.24000, lng: 106.82000, intensity: 0.75 },
+  ];
+
+  const bbox = { minLng: 106.75, maxLng: 106.9, minLat: -6.25, maxLat: -6.15 };
+
+  const heatmapGradients = heatmapData.map(point => {
+    const x_pct = ((point.lng - bbox.minLng) / (bbox.maxLng - bbox.minLng)) * 100;
+    const y_pct = ((bbox.maxLat - point.lat) / (bbox.maxLat - bbox.minLat)) * 100;
+    
+    const color1 = `rgba(239, 68, 68, ${point.intensity})`;
+    const color2 = `rgba(249, 115, 22, ${point.intensity * 0.7})`;
+    const color3 = `rgba(234, 179, 8, ${point.intensity * 0.3})`;
+    
+    return `radial-gradient(circle at ${x_pct.toFixed(2)}% ${y_pct.toFixed(2)}%, ${color1} 0%, ${color2} 15%, ${color3} 30%, transparent 50%)`;
+  }).join(", ");
+
+  return (
+    <>
+      <header className={styles.header}>
+        <h1 className={styles.title}>Dashboard Eksekutif</h1>
+        <p className={styles.subtitle}>
+          Ringkasan pemantauan isu regional dan manajemen penanganan
+        </p>
+      </header>
+
+      <div className={styles.grid}>
+        <Card className={`${styles.col12} border-slate-200 shadow-sm`}>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ChartLineUpIcon size={24} weight="duotone" />
+              Statistik Ringkas (Bulan Ini)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={styles.statsGrid}>
+              <div className={styles.statCard}>
+                <div className={styles.statHeader}>
+                  <div className={styles.statIcon}>
+                    <TicketIcon size={18} weight="bold" />
+                  </div>
+                  Tiket Masuk
+                </div>
+                <div className={styles.statValue}>1,284</div>
+                <div className={`${styles.statTrend} ${styles.trendUp}`}>
+                  <ChartLineUpIcon size={16} /> +12.5% dari bulan lalu
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <div className={styles.statHeader}>
+                  <div className={styles.statIcon}>
+                    <ClockIcon size={18} weight="bold" />
+                  </div>
+                  Dalam Proses
+                </div>
+                <div className={styles.statValue}>432</div>
+                <div className={`${styles.statTrend} ${styles.trendDown}`}>
+                  <ChartLineUpIcon
+                    size={16}
+                    style={{ transform: "scaleY(-1)" }}
+                  />{" "}
+                  -3.2% efisiensi SLA
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <div className={styles.statHeader}>
+                  <div className={styles.statIcon}>
+                    <CheckCircleIcon size={18} weight="bold" />
+                  </div>
+                  Selesai
+                </div>
+                <div className={styles.statValue}>852</div>
+                <div className={`${styles.statTrend} ${styles.trendUp}`}>
+                  <ChartLineUpIcon size={16} /> +8.1% tingkat penyelesaian
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={`${styles.col8} border-slate-200 shadow-sm`}>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FireIcon size={24} weight="duotone" />
+              Peta Heatmap Konsentrasi Masalah
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pb-6">
+            <div className={styles.mapWrapper}>
+            <iframe
+              src="https://www.openstreetmap.org/export/embed.html?bbox=106.75%2C-6.25%2C106.9%2C-6.15&layer=mapnik"
+              className={styles.mapIframe}
+              title="Heatmap"
+              loading="lazy"
+            />
+            <div 
+              className={styles.heatmapOverlay} 
+              style={{ background: heatmapGradients }}
+            />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={`${styles.col4} border-slate-200 shadow-sm`}>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <WarningCircleIcon size={24} weight="duotone" />
+              Daftar Prioritas Teratas
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pb-6 px-4">
+            <div className={styles.list}>
+            {[
+              {
+                id: "TK-2041",
+                type: "Infrastruktur",
+                score: "9.8",
+                loc: "Kec. Sukamaju",
+              },
+              {
+                id: "TK-2038",
+                type: "Penerangan",
+                score: "9.5",
+                loc: "Jalan Merdeka",
+              },
+              {
+                id: "TK-2022",
+                type: "Kesehatan",
+                score: "9.2",
+                loc: "Pasar Rakyat",
+              },
+              {
+                id: "TK-2015",
+                type: "Kebersihan",
+                score: "8.9",
+                loc: "Bantaran Sungai",
+              },
+              {
+                id: "TK-2011",
+                type: "Infrastruktur",
+                score: "8.7",
+                loc: "Ring Road Utara",
+              },
+              {
+                id: "TK-1998",
+                type: "Infrastruktur",
+                score: "8.4",
+                loc: "Simpang Lima",
+              },
+            ].map((ticket, i) => (
+              <div key={i} className={styles.listItem}>
+                <div className={styles.itemInfo}>
+                  <span className={styles.itemTitle}>
+                    {ticket.id} - {ticket.type}
+                  </span>
+                  <div className={styles.itemMeta}>
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      <MapPinIcon size={14} /> {ticket.loc}
+                    </span>
+                    <span className={styles.itemScore}>
+                      Skor: {ticket.score}
+                    </span>
+                  </div>
+                </div>
+                <div className={styles.actions}>
+                  <Button size="sm">Setujui</Button>
+                  <Button size="sm" variant="outline">Tolak</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          </CardContent>
+        </Card>
+
+        <Card className={`${styles.col12} border-slate-200 shadow-sm`}>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ShieldCheckIcon size={24} weight="duotone" />
+              Manajemen Lock Flag (Zona Terkunci)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pb-6">
+            <div className={styles.mapWrapper} style={{ height: "360px" }}>
+            <iframe
+              src="https://www.openstreetmap.org/export/embed.html?bbox=106.8%2C-6.22%2C106.85%2C-6.18&layer=mapnik"
+              className={styles.mapIframe}
+              title="Lock Flag Map"
+              loading="lazy"
+            />
+            <div className={styles.lockOverlay}>
+              <div className={styles.lockTitle}>
+                <div className={styles.lockIndicator} />
+                Zona Terkunci: Sukamaju Utara
+              </div>
+              <div className={styles.lockDetail}>
+                <span>Kategori:</span>
+                <strong>Infrastruktur (Jalan Rusak)</strong>
+              </div>
+              <div className={styles.lockDetail}>
+                <span>Ditangani oleh:</span>
+                <strong>Dinas Bina Marga</strong>
+              </div>
+              <div className={styles.lockDetail}>
+                <span>Estimasi Selesai:</span>
+                <strong>48 Jam (2 Hari)</strong>
+              </div>
+              <div className={styles.lockDetail}>
+                <span>Status:</span>
+                <strong style={{ fontWeight: 600 }}>Tim di lokasi</strong>
+              </div>
+            </div>
+            <div
+              className={styles.lockOverlay}
+              style={{
+                top: "auto",
+                bottom: "1rem",
+                right: "1rem",
+                left: "auto",
+              }}
+            >
+              <div className={styles.lockTitle}>
+                <div className={styles.lockIndicator} />
+                Zona Terkunci: Pasar Rakyat
+              </div>
+              <div className={styles.lockDetail}>
+                <span>Kategori:</span>
+                <strong>Kesehatan Lingkungan</strong>
+              </div>
+              <div className={styles.lockDetail}>
+                <span>Ditangani oleh:</span>
+                <strong>Dinas Lingkungan Hidup</strong>
+              </div>
+              <div className={styles.lockDetail}>
+                <span>Estimasi Selesai:</span>
+                <strong>12 Jam</strong>
+              </div>
+              <div className={styles.lockDetail}>
+                <span>Status:</span>
+                <strong style={{ fontWeight: 600 }}>
+                  Menunggu alat berat
+                </strong>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      </div>
+    </>
+  );
+}
+
+function OpdContent() {
+  const [zones, setZones] = useState<Array<{ code: string; district: string; radiusMeters: number; createdAt: string; latitude: number; longitude: number }>>([]);
+  const [liveData, setLiveData] = useState<{ tickets: Array<{ code: string; category: string; status: string; latitude: number; longitude: number; updatedAt?: string }>; notifications: Array<{ id: string; title: string; message: string; createdAt: string; readAt: string | null }> }>({ tickets: [], notifications: [] });
+  const [zonesError, setZonesError] = useState("");
+  const [progressing, setProgressing] = useState<Record<string, boolean>>({});
+
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description?: string;
+    type?: "confirm" | "success" | "error" | "warning" | "info";
+    onConfirm?: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+  });
+
+  async function handleProgress(code: string) {
+    if (progressing[code]) return;
+    setProgressing(prev => ({ ...prev, [code]: true }));
+    try {
+      const response = await fetch(`/api/opd/tickets/${encodeURIComponent(code)}/progress`, { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Gagal memperbarui status.");
+      setModalConfig({
+        isOpen: true,
+        title: "Status Diperbarui",
+        description: "Tiket berhasil diproses dan zona lock telah dibuat!",
+        type: "success",
+        onConfirm: () => window.location.reload()
+      });
+    } catch (err: any) {
+      setModalConfig({
+        isOpen: true,
+        title: "Gagal Memperbarui Status",
+        description: err.message,
+        type: "error"
+      });
+      setProgressing(prev => ({ ...prev, [code]: false }));
+    }
+  }
+
+  useEffect(() => {
+    fetch("/api/opd/zones")
+      .then(async (response) => response.ok ? response.json() : Promise.reject(await response.json()))
+      .then(setZones)
+      .catch((error) => setZonesError(error?.error ?? "Zona aktif tidak dapat dimuat."));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/opd/dashboard").then(async (response) => response.ok ? response.json() : Promise.reject()).then(setLiveData).catch(() => undefined);
+  }, []);
+
+  return (
+    <>
+      <header className={styles.header}>
+        <h1 className={styles.title}>Antrean Disposisi Masalah</h1>
+        <p className={styles.subtitle}>
+          Tiket prioritas yang membutuhkan inspeksi lapangan dan penanganan tim
+          Anda.
+        </p>
+      </header>
+
+      <Card className="mb-5 border-amber-200 bg-amber-50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2"><LockKeyIcon size={22} weight="duotone" /> Zona aktif di wilayah kerja</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {zonesError ? <p className="text-sm text-red-700">{zonesError}</p> : zones.length ? (
+            <div className="flex flex-wrap gap-3">{zones.map((zone) => <a key={zone.code} href={`https://www.openstreetmap.org/?mlat=${zone.latitude}&mlon=${zone.longitude}#map=17/${zone.latitude}/${zone.longitude}`} target="_blank" rel="noreferrer"><Badge variant="secondary">{zone.code} · {zone.district} · radius {zone.radiusMeters} m · lihat peta</Badge></a>)}</div>
+          ) : <p className="text-sm text-slate-600">Tidak ada zona terkunci. Memulai progres tiket akan mengunci radius 500 meter secara default.</p>}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 mb-5 lg:grid-cols-2">
+        <Card><CardHeader><CardTitle>Tiket saya</CardTitle></CardHeader><CardContent>{liveData.tickets.length ? <div className="space-y-2">{liveData.tickets.map((ticket) => <a className="block rounded border p-3 hover:bg-slate-50" href={`/dashboard/laporan/${ticket.code}`} key={ticket.code}><b>{ticket.code}</b><span className="ml-2 text-sm text-slate-600">{ticket.category} · {ticket.status}</span></a>)}</div> : <p className="text-sm text-slate-500">Belum ada tiket yang ditugaskan secara langsung kepada Anda.</p>}</CardContent></Card>
+        <Card><CardHeader><CardTitle>Notifikasi</CardTitle></CardHeader><CardContent>{liveData.notifications.length ? <div className="space-y-3">{liveData.notifications.map((notification) => <div key={notification.id} className="border-b pb-2"><b className="text-sm">{notification.title}</b><p className="m-0 text-sm text-slate-600">{notification.message}</p></div>)}</div> : <p className="text-sm text-slate-500">Belum ada notifikasi baru.</p>}</CardContent></Card>
+      </div>
+
+      <div className={styles.queueList}>
+        {liveData.tickets.length > 0 ? (
+          liveData.tickets.map((ticket) => (
+            <Card className="overflow-hidden mb-4" key={ticket.code}>
+              <CardContent className="p-0">
+                <div className={styles.ticketCard}>
+                  <div className={styles.ticketContent}>
+                    <div className={styles.ticketHeader}>
+                      <div>
+                        <h3 className={styles.ticketTitle}>
+                          Laporan Kategori: {ticket.category}
+                        </h3>
+                        <div className={styles.ticketMeta}>
+                          <Badge variant="secondary">#{ticket.code}</Badge>
+                          <Badge variant={ticket.status === 'DIPROSES_OPD' ? "default" : "outline"} className={ticket.status === 'DIPROSES_OPD' ? "bg-blue-600 hover:bg-blue-700" : ""}>
+                            {ticket.status}
+                          </Badge>
+                          <span className="text-sm text-slate-500">
+                            {ticket.updatedAt ? new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(ticket.updatedAt)) : "Baru saja"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={styles.detailGrid} style={{ marginBottom: "1rem" }}>
+                      <div className={styles.detailItem}>
+                        <div className={styles.detailLabel}>
+                          <MapPinLineIcon size={16} /> Koordinat Presisi
+                        </div>
+                        <div className={`${styles.detailValue} ${styles.coords}`}>
+                          {ticket.latitude.toFixed(5)}, {ticket.longitude.toFixed(5)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={styles.ticketActions}>
+                      <Button onClick={() => window.location.assign(`/dashboard/laporan/${ticket.code}`)} variant="outline">
+                        <NavigationArrowIcon size={18} /> Lihat Detail
+                      </Button>
+                      
+                      {ticket.status === "TERVALIDASI" && (
+                        <Button 
+                          onClick={() => handleProgress(ticket.code)}
+                          disabled={progressing[ticket.code]}
+                        >
+                          <CheckCircleIcon size={18} /> {progressing[ticket.code] ? "Memproses..." : "Tandai Sedang Inspeksi (Lock Zone)"}
+                        </Button>
+                      )}
+                      
+                      {ticket.status === "DIPROSES_OPD" && (
+                        <Button onClick={() => window.location.assign(`/dashboard/laporan/${ticket.code}`)} className="bg-emerald-600 hover:bg-emerald-700">
+                          <CheckCircleIcon size={18} /> Unggah Bukti Penyelesaian
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <p style={{ color: "#64748b", textAlign: "center", padding: "2rem" }}>
+            Tidak ada tiket di antrean Anda.
+          </p>
+        )}
+      </div>
+
+      <ConfirmModal
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig((p) => ({ ...p, isOpen: false }))}
+        onConfirm={modalConfig.onConfirm}
+        title={modalConfig.title}
+        description={modalConfig.description}
+        type={modalConfig.type}
+      />
+    </>
+  );
+}
+
+export const DashboardLayout = ({ page }: DashboardLayoutProps) => {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const isEksekutif = page === "eksekutif";
+
+  return (
+    <div className={styles.layout}>
+      <DashboardSidebar 
+        isCollapsed={isSidebarCollapsed} 
+        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
+      />
+
+      <main className={styles.main}>
+        {isEksekutif ? <EksekutifContent /> : <OpdContent />}
+      </main>
+    </div>
+  );
+};
