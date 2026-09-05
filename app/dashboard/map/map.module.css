@@ -1,0 +1,306 @@
+.page {
+  min-height: 100vh;
+  background: #f4f5ef;
+  color: #102a45;
+  padding: 32px max(24px, calc((100vw - 1320px) / 2)) 60px;
+}
+
+.back {
+  color: #2979ff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.page h1 {
+  margin: 23px 0 7px;
+  font-family: var(--font-display), sans-serif;
+  font-size: 44px;
+  letter-spacing: -.05em;
+}
+
+.page > p {
+  margin: 0 0 24px;
+  color: #65747c;
+  font-size: 14px;
+}
+
+.mapWrap {
+  position: relative;
+  height: 62vh;
+  min-height: 480px;
+  overflow: hidden;
+  border: 1px solid #d7e0dc;
+  border-radius: 9px;
+  background: #dbe8e5;
+  box-shadow: 0 12px 35px rgba(7, 29, 54, .08);
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.loading {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  color: #607480;
+  font-size: 13px;
+}
+
+.markerShell {
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.markerShell > span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 5px;
+  color: #071d36;
+  font-size: 10px;
+  font-weight: 850;
+  box-shadow: 0 6px 17px rgba(7, 29, 54, .35);
+  transform: rotate(-45deg);
+}
+
+.markerShell > span::first-letter {
+  transform: rotate(45deg);
+}
+
+.markerShell > span > b {
+  transform: rotate(45deg);
+}
+
+.popup {
+  display: flex;
+  min-width: 220px;
+  flex-direction: column;
+  padding: 4px;
+}
+
+.popup b {
+  color: #102a45;
+  font-size: 13px;
+}
+
+.popup small {
+  margin-top: 4px;
+  color: #73838c;
+  font-size: 10px;
+  text-transform: capitalize;
+}
+
+.popup p {
+  margin: 9px 0;
+  color: #425864;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.popup a {
+  color: #2979ff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.tableSection {
+  margin-top: 32px;
+  background: #fff;
+  border: 1px solid #d7e0dc;
+  border-radius: 9px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(7, 29, 54, 0.03);
+}
+
+.tableHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.tableHeader h2 {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  color: #102a45;
+}
+
+.searchWrapper {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 16px;
+  font-size: 12px;
+  border: 1px solid #ccd7d3;
+  border-radius: 6px;
+  background: #fff;
+  color: #102a45;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+  border-color: #2979ff;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid #e0e6e3;
+  border-radius: 6px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12px;
+}
+
+.table th {
+  background: #f8faf9;
+  border-bottom: 1px solid #e0e6e3;
+  padding: 12px 16px;
+  font-weight: 700;
+  color: #536672;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f3f2;
+  color: #102a45;
+  vertical-align: top;
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+.codeLink {
+  font-weight: 700;
+  color: #2979ff;
+  text-decoration: none;
+}
+
+.codeLink:hover {
+  text-decoration: underline;
+}
+
+.descCell {
+  color: #425864;
+  line-height: 1.5;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.badgeLow {
+  background: #eaf8f2;
+  color: #20846a;
+}
+
+.badgeMedium {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.badgeHigh {
+  background: #fff0ed;
+  color: #d95848;
+}
+
+.emptyCell {
+  text-align: center;
+  padding: 32px !important;
+  color: #73838c;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.paginationInfo {
+  color: #65747c;
+  font-size: 12px;
+}
+
+.paginationButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.pageButton {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #102a45;
+  background: #fff;
+  border: 1px solid #ccd7d3;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.pageButton:hover:not(:disabled) {
+  border-color: #2979ff;
+  color: #2979ff;
+}
+
+.pageButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .page {
+    padding-top: 22px;
+  }
+
+  .page h1 {
+    font-size: 36px;
+  }
+
+  .mapWrap {
+    height: 65vh;
+    min-height: 430px;
+  }
+
+  .tableHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .searchWrapper {
+    max-width: 100%;
+  }
+}
